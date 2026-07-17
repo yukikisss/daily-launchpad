@@ -753,7 +753,7 @@
   }
   #profileLogoutBtn { color: #C6613F; font-weight: 600; }
 
-  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay { z-index: 45; }
+  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay, #langOverlay { z-index: 46; }
   .modal-close-x {
     position: absolute;
     top: 12px;
@@ -851,11 +851,11 @@
         <button type="button" id="switchCancelBtn" style="background:none;border:none;color:#8A8878;font-size:12px;cursor:pointer;padding:0;text-decoration:underline;">取消，返回目前帳號</button>
       </div>
       <div class="field">
-        <label>Email</label>
+        <label id="labelEmail1">Email</label>
         <input type="text" id="authEmail" placeholder="you@example.com" autocomplete="username" />
       </div>
       <div class="field" style="margin-bottom:6px;">
-        <label>密碼</label>
+        <label id="labelPassword1">密碼</label>
         <input type="password" id="authPassword" placeholder="至少 6 個字元" autocomplete="current-password" />
       </div>
       <div style="text-align:right; margin-bottom:14px;">
@@ -868,7 +868,7 @@
       </div>
     </div>
     <div id="authVerifyView" style="display:none;">
-      <h3>請先驗證 Email</h3>
+      <h3 id="verifyTitleH3">請先驗證 Email</h3>
       <div class="sub" id="verifySub"></div>
       <div class="auth-error" id="verifyError"></div>
       <div class="modal-actions" style="justify-content:space-between; align-items:center;">
@@ -880,10 +880,10 @@
       </div>
     </div>
     <div id="authResetView" style="display:none;">
-      <h3>找回密碼</h3>
-      <div class="sub">輸入註冊時用的、且已驗證過的 Email，我們會寄一封重設密碼的信給你。</div>
+      <h3 id="resetTitleH3">找回密碼</h3>
+      <div class="sub" id="resetSub">輸入註冊時用的、且已驗證過的 Email，我們會寄一封重設密碼的信給你。</div>
       <div class="field">
-        <label>Email</label>
+        <label id="labelEmailReset">Email</label>
         <input type="text" id="resetEmail" placeholder="you@example.com" autocomplete="username" />
       </div>
       <div class="auth-error" id="resetError"></div>
@@ -917,7 +917,7 @@
 <div class="overlay" id="profileOverlay">
   <div class="modal" style="max-width:360px; position:relative;">
     <button type="button" id="profileOverlayCloseBtn" class="modal-close-x" title="關閉">×</button>
-    <h3>個人檔案</h3>
+    <h3 id="profileTitleH3">個人檔案</h3>
     <div class="profile-dropdown-avatar" style="margin-top:14px;">
       <span class="profile-avatar profile-avatar-lg" id="profileAvatarWrapLg">
         <img id="profileAvatarImgLg" style="display:none;" />
@@ -927,7 +927,7 @@
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
     </div>
     <div class="field" style="margin:16px 0 10px;">
-      <label style="font-size:12px;">顯示名稱</label>
+      <label id="labelDisplayName" style="font-size:12px;">顯示名稱</label>
       <input type="text" id="displayNameInput" placeholder="妳的名字" />
     </div>
     <div class="profile-email" id="profileEmailLabel"></div>
@@ -937,17 +937,19 @@
 <div class="overlay" id="settingsOverlay">
   <div class="modal" style="max-width:360px; position:relative;">
     <button type="button" id="settingsOverlayCloseBtn" class="modal-close-x" title="關閉">×</button>
-    <h3>設定</h3>
-    <div class="sub">資料備份與跨裝置相關的功能都在這裡。</div>
+    <h3 id="settingsTitleH3">設定</h3>
+    <div class="sub" id="settingsSub">資料備份與跨裝置相關的功能都在這裡。</div>
     <div id="settingsMainView" style="margin-top:14px;">
       <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
+      <div class="settings-divider"></div>
+      <button type="button" class="context-menu-item" id="openLanguageBtn">🌐 繁中 / 简中 / English / 한국어 / Español</button>
       <div class="settings-divider"></div>
       <button type="button" class="context-menu-item" id="deleteAccountBtn" style="color:#C6613F;">🗑️ 註銷帳號</button>
     </div>
     <div id="deleteAccountConfirm" style="display:none; margin-top:14px;">
-      <div style="font-size:13px; color:#C6613F; margin-bottom:12px;">註銷帳號會永久刪除妳的所有資料，且無法復原。請輸入密碼確認。</div>
+      <div id="deleteAccountWarning" style="font-size:13px; color:#C6613F; margin-bottom:12px;">註銷帳號會永久刪除妳的所有資料，且無法復原。請輸入密碼確認。</div>
       <div class="field">
-        <label>密碼</label>
+        <label id="labelPasswordDelete">密碼</label>
         <input type="password" id="deleteAccountPassword" placeholder="輸入密碼確認" />
       </div>
       <div class="auth-error" id="deleteAccountError"></div>
@@ -962,8 +964,8 @@
 <div class="overlay" id="switchOverlay">
   <div class="modal" style="max-width:380px; position:relative;">
     <button type="button" id="switchCloseBtn" class="modal-close-x" title="關閉">×</button>
-    <h3>切換帳號</h3>
-    <div class="sub">選一個在這台設備登入過的帳號，或加入新的帳號。這裡只是快速選擇，還是需要輸入密碼才能登入。</div>
+    <h3 id="switchTitleH3">切換帳號</h3>
+    <div class="sub" id="switchSub">選一個在這台設備登入過的帳號，或加入新的帳號。這裡只是快速選擇，還是需要輸入密碼才能登入。</div>
     <div id="knownAccountsList" style="margin:14px 0;"></div>
     <button class="btn-secondary" id="switchAddAccountBtn" type="button" style="width:100%;">+ 登入其他帳號</button>
   </div>
@@ -972,15 +974,15 @@
 <div class="overlay" id="syncOverlay">
   <div class="modal" style="max-width:420px; position:relative;">
     <button type="button" id="syncCloseBtn" class="modal-close-x" title="關閉">×</button>
-    <h3>同步歷史</h3>
-    <div class="sub">匯出目前所有資料成備份檔，或匯入之前匯出的備份檔，換帳號時可以用這個互傳資料。</div>
+    <h3 id="syncTitleH3">同步歷史</h3>
+    <div class="sub" id="syncSub">匯出目前所有資料成備份檔，或匯入之前匯出的備份檔，換帳號時可以用這個互傳資料。</div>
     <div id="syncDropZone" class="sync-drop-zone">
       <div class="sync-drop-icon">📥</div>
-      <div>把備份檔拖到這裡，或點擊選擇檔案</div>
+      <div id="syncDropText">把備份檔拖到這裡，或點擊選擇檔案</div>
     </div>
     <input type="file" id="syncFileInput" accept="application/json,.json" style="display:none;" />
     <div id="syncImportConfirm" style="display:none; margin-top:12px;">
-      <div style="font-size:13px; color:#C6613F; margin-bottom:8px;">這會覆蓋目前所有資料，確定要匯入嗎？</div>
+      <div id="syncImportWarning" style="font-size:13px; color:#C6613F; margin-bottom:8px;">這會覆蓋目前所有資料，確定要匯入嗎？</div>
       <div class="modal-actions" style="justify-content:flex-end;">
         <button class="btn-secondary" id="syncImportCancelBtn" type="button">取消</button>
         <button class="btn-primary" id="syncImportConfirmBtn" type="button">確認匯入</button>
@@ -991,15 +993,23 @@
   </div>
 </div>
 
+<div class="overlay" id="langOverlay">
+  <div class="modal" style="max-width:320px; position:relative;">
+    <button type="button" id="langCloseBtn" class="modal-close-x" title="Close / 關閉 / 关闭 / 닫기 / Cerrar">×</button>
+    <h3 id="langOverlayTitle">選擇語言 / 选择语言 / Choose language / 언어 선택 / Elegir idioma</h3>
+    <div id="langOptionList" style="margin-top:14px; display:flex; flex-direction:column; gap:6px;"></div>
+  </div>
+</div>
+
 <div class="wrap" style="display:none;">
   <div id="verifyReminder">
-    <span>還沒有驗證 Email，記得去信箱點一下驗證連結。</span>
+    <span id="verifyReminderText">還沒有驗證 Email，記得去信箱點一下驗證連結。</span>
     <button type="button" id="reminderResendBtn" class="verify-reminder-btn">重寄驗證信</button>
     <span id="reminderResendMsg"></span>
     <button type="button" id="reminderDismissBtn" title="關閉提醒">×</button>
   </div>
   <div class="date-line" id="dateLine"></div>
-  <h1>今日啟動台</h1>
+  <h1 id="appHeading">今日啟動台</h1>
   <div class="greeting" id="greeting"></div>
 
   <div class="top-row">
@@ -1007,19 +1017,19 @@
       <div class="hero" id="heroCard"></div>
 
       <div class="card">
-        <h2>隨手記錄</h2>
+        <h2 id="captureHeading">隨手記錄</h2>
         <div class="capture-row">
           <input id="captureInput" type="text" placeholder="想到什麼就丟進來，不用想格式…" />
           <button id="newAttachBtn" class="attach-new-btn" type="button" title="附加檔案（選填）">📎</button>
           <button id="addBtn">加入</button>
         </div>
         <div class="new-attach-preview" id="newAttachPreview"></div>
-        <div class="capture-hint">打 #分類名稱 會自動歸類，同時教會系統這類內容以後自動歸到這個分類；不打的話系統會用之前學到的規則自動猜分類，猜錯了就在項目旁邊改一次，它會記住。打「今天/昨天/前天」或「7月9號」這種日期，加上「做了、完成了、done」，會自動判斷完成狀態和放到哪一天，例如「7月9號投遞了6份工作」。</div>
+        <div class="capture-hint" id="captureHint">打 #分類名稱 會自動歸類，同時教會系統這類內容以後自動歸到這個分類；不打的話系統會用之前學到的規則自動猜分類，猜錯了就在項目旁邊改一次，它會記住。打「今天/昨天/前天」或「7月9號」這種日期，加上「做了、完成了、done」，會自動判斷完成狀態和放到哪一天，例如「7月9號投遞了6份工作」。</div>
         <div class="item-list" id="itemList"></div>
       </div>
 
       <details class="history">
-        <summary>查看過去的收尾紀錄</summary>
+        <summary id="historySummary">查看過去的收尾紀錄</summary>
         <div id="historyList" style="margin-top:8px;"></div>
       </details>
     </div>
@@ -1027,8 +1037,8 @@
     <div class="routine-col" id="routineCol">
       <button type="button" id="routineDrawerCloseBtn" class="routine-drawer-close" title="關閉">×</button>
       <div class="routine-panel">
-        <h2 class="routine-heading">每日例行</h2>
-        <div class="routine-hint">只紀錄最近日常最重要的三件事</div>
+        <h2 class="routine-heading" id="routineHeadingText">每日例行</h2>
+        <div class="routine-hint" id="routineHintText">只紀錄最近日常最重要的三件事</div>
         <div class="routine-progress" id="routineProgress"></div>
         <ul class="routine-list" id="routineList"></ul>
         <div class="routine-add-row" id="routineAddRow">
@@ -1040,8 +1050,8 @@
       <div class="reco-panel" id="recoPanel">
         <div class="reco-panel-head">
           <div>
-            <div class="reco-panel-title">🔮 今天可能想做</div>
-            <div class="reco-panel-sub">根據妳過去的紀錄推薦，點 + 直接加進今天</div>
+            <div class="reco-panel-title" id="recoTitleText">🔮 今天可能想做</div>
+            <div class="reco-panel-sub" id="recoSubText">根據妳過去的紀錄推薦，點 + 直接加進今天</div>
           </div>
         </div>
         <div class="reco-chips" id="recoChips"></div>
@@ -1062,7 +1072,7 @@
   <button class="context-menu-item" id="ctxAttachBtn" type="button"></button>
   <button class="context-menu-item" id="ctxRemoveBtn" type="button" style="display:none;">🗑 移除附件</button>
   <div class="context-menu-divider"></div>
-  <div class="context-menu-label">改分類</div>
+  <div class="context-menu-label" id="ctxChangeCategoryLabel">改分類</div>
   <div class="context-menu-cats" id="ctxCategoryList"></div>
   <button class="context-menu-item" id="ctxNewCatToggle" type="button">+ 新增分類…</button>
   <div class="context-menu-newcat-row" id="ctxNewCatRow" style="display:none;">
@@ -1073,21 +1083,21 @@
 
 <div class="overlay" id="overlay">
   <div class="modal">
-    <h3>收尾一下</h3>
-    <div class="sub">三格就好，寫完明天打開就知道從哪裡開始。</div>
+    <h3 id="shutdownTitleH3">收尾一下</h3>
+    <div class="sub" id="shutdownSub">三格就好，寫完明天打開就知道從哪裡開始。</div>
 
     <div class="field">
-      <label>現在卡在哪裡</label>
+      <label id="shutdownStuckLabel">現在卡在哪裡</label>
       <textarea id="stuckInput" rows="2" placeholder="例如：報告寫到第二段的資料分析，數字還沒核對完"></textarea>
     </div>
 
     <div class="field">
-      <label>下一步的第一個動作 <span class="hint">（小到 5 分鐘內能做完）</span></label>
+      <label id="shutdownNextLabel">下一步的第一個動作 <span class="hint" id="shutdownNextHint">（小到 5 分鐘內能做完）</span></label>
       <input id="actionInput" type="text" placeholder="例如：打開檔案，核對表三的數字" />
     </div>
 
     <div class="field" id="leftoverField" style="display:none;">
-      <label>今天還沒打勾的記錄</label>
+      <label id="shutdownLeftoverLabel">今天還沒打勾的記錄</label>
       <div class="leftover-preview" id="leftoverPreview"></div>
     </div>
 
@@ -1099,6 +1109,844 @@
 </div>
 
 <script>
+// ---------------------------------------------------------------------------
+// i18n — five UI languages (繁中／简中／English／한국어／Español). Declared at the
+// top level of this classic script (not inside window.initApp) so `t()` and
+// friends attach to `window` and are usable from the auth/Firebase module
+// script too, which runs before initApp is ever called (during login).
+// ---------------------------------------------------------------------------
+const LANGS = ["zh-Hant", "zh-Hans", "en", "ko", "es"];
+const LANG_NATIVE_NAMES = { "zh-Hant": "繁體中文", "zh-Hans": "简体中文", en: "English", ko: "한국어", es: "Español" };
+
+const I18N = {
+  "zh-Hant": {
+    app_title: "今日啟動台",
+    greeting_morning: "早安", greeting_noon: "午安", greeting_afternoon: "下午好", greeting_evening: "晚上好", greeting_late: "夜深了",
+    greeting_template: "{prefix}，這是你的今日工作台",
+    auth_login_title: "登入", auth_signup_title: "註冊新帳號",
+    auth_sub: "用 Email 登入，資料就會自動跨裝置同步。",
+    auth_switch_cancel: "取消，返回目前帳號",
+    label_email: "Email", label_password: "密碼",
+    auth_password_placeholder: "至少 6 個字元",
+    auth_forgot_password: "忘記密碼？",
+    auth_toggle_to_signup: "改成註冊新帳號", auth_toggle_to_login: "改成登入",
+    auth_signup_btn: "註冊",
+    auth_verify_title: "請先驗證 Email",
+    btn_logout: "登出",
+    btn_resend_verification: "重寄驗證信",
+    btn_already_verified: "我已驗證",
+    auth_reset_title: "找回密碼",
+    auth_reset_sub: "輸入註冊時用的、且已驗證過的 Email，我們會寄一封重設密碼的信給你。",
+    auth_reset_back: "返回登入", auth_reset_submit: "寄送重設信",
+    menu_profile: "個人檔案", menu_settings: "設定", menu_switch_account: "切換帳號",
+    btn_close: "關閉",
+    profile_upload_avatar: "上傳頭像", profile_display_name: "顯示名稱", profile_name_placeholder: "妳的名字",
+    settings_sub: "資料備份與跨裝置相關的功能都在這裡。",
+    settings_sync_history: "🔄 同步歷史", settings_delete_account: "🗑️ 註銷帳號",
+    settings_language: "🌐 語言",
+    delete_account_warning: "註銷帳號會永久刪除妳的所有資料，且無法復原。請輸入密碼確認。",
+    delete_account_password_placeholder: "輸入密碼確認",
+    btn_cancel: "取消", delete_account_confirm_btn: "確認註銷",
+    switch_sub: "選一個在這台設備登入過的帳號，或加入新的帳號。這裡只是快速選擇，還是需要輸入密碼才能登入。",
+    switch_add_account: "+ 登入其他帳號",
+    switch_empty: "這台設備上還沒有登入紀錄",
+    switch_remove_title: "從清單移除（不會刪除帳號）",
+    sync_title: "同步歷史",
+    sync_sub: "匯出目前所有資料成備份檔，或匯入之前匯出的備份檔，換帳號時可以用這個互傳資料。",
+    sync_drop_text: "把備份檔拖到這裡，或點擊選擇檔案",
+    sync_import_warning: "這會覆蓋目前所有資料，確定要匯入嗎？",
+    sync_import_confirm_btn: "確認匯入", sync_export_btn: "一鍵導出",
+    sync_invalid_file: "這個檔案看起來不是有效的備份檔",
+    sync_read_fail: "讀取檔案失敗，再試一次",
+    verify_reminder_text: "還沒有驗證 Email，記得去信箱點一下驗證連結。",
+    verify_dismiss_title: "關閉提醒",
+    capture_heading: "隨手記錄",
+    capture_placeholder: "想到什麼就丟進來，不用想格式…",
+    capture_attach_title: "附加檔案（選填）",
+    btn_add: "加入",
+    capture_hint: "打 #分類名稱 會自動歸類，同時教會系統這類內容以後自動歸到這個分類；不打的話系統會用之前學到的規則自動猜分類，猜錯了就在項目旁邊改一次，它會記住。打「今天/昨天/前天」或「7月9號」這種日期，加上「做了、完成了、done」，會自動判斷完成狀態和放到哪一天，例如「7月9號投遞了6份工作」。",
+    history_summary: "查看過去的收尾紀錄",
+    routine_heading: "每日例行", routine_hint: "只紀錄最近日常最重要的三件事",
+    routine_add_placeholder: "新增例行事項…",
+    reco_title: "🔮 今天可能想做",
+    reco_sub: "根據妳過去的紀錄推薦，點 + 直接加進今天",
+    btn_shutdown: "結束今天",
+    routine_fab_title: "每日例行・今天可能想做",
+    ctx_remove_attachment: "🗑 移除附件", ctx_change_category: "改分類",
+    ctx_new_category: "+ 新增分類…", ctx_new_category_placeholder: "新分類名稱",
+    btn_confirm_add: "加",
+    ctx_replace_attachment: "📎 更換附件", ctx_add_attachment: "📎 新增附件",
+    shutdown_title: "收尾一下",
+    shutdown_sub: "三格就好，寫完明天打開就知道從哪裡開始。",
+    shutdown_stuck_label: "現在卡在哪裡",
+    shutdown_stuck_placeholder: "例如：報告寫到第二段的資料分析，數字還沒核對完",
+    shutdown_next_label: "下一步的第一個動作",
+    shutdown_next_hint: "（小到 5 分鐘內能做完）",
+    shutdown_next_placeholder: "例如：打開檔案，核對表三的數字",
+    shutdown_leftover_label: "今天還沒打勾的記錄",
+    btn_save_and_end: "儲存並結束",
+    hero_drag_title: "拖曳排序", generic_delete_title: "刪除",
+    hero_unfinished_tag: "還沒做完的（{n}）",
+    hero_start_label: "從這裡開始",
+    hero_empty_text: "還沒有收尾紀錄。今天結束時按下方「結束今天」，明天這裡就會顯示妳的第一步。",
+    hero_doing_tag: "現在做這件事",
+    empty_placeholder: "（沒有填寫）",
+    hero_start_btn: "成功啟動！",
+    hero_last_stuck_tag: "上次停在",
+    hero_recorded_at: "記錄於 {date}",
+    item_drag_title: "拖曳到別的分類", attachment_remove_title: "移除附件",
+    today_no_records: "今天還沒有記錄", today_date_label: "今天・{date}",
+    history_empty: "還沒有紀錄",
+    history_stuck_label: "停在：{x}", history_next_label: "下一步：{x}",
+    routine_empty_text: "還沒有例行事項，加一個每天想做的小事吧，例如「喝水」「運動 10 分鐘」。",
+    routine_progress_text: "今天 {done} / {total} 完成",
+    routine_delete_title: "刪除這個例行事項",
+    toast_routine_limit: "每天最多只記錄 {n} 件例行事項，先刪一個舊的再加新的",
+    capture_pending_attachment: "📎 {name}，加入時會一起附上",
+    capture_cancel_attach_title: "取消附加",
+    toast_file_too_large: "檔案太大了（{mb}MB），先支援 2MB 以內的檔案",
+    toast_save_failed: "儲存失敗，可能是空間不足了，換個更小的檔案試試",
+    toast_save_failed_attachment: "儲存失敗，可能是空間不足了，附件換個更小的檔案試試",
+    toast_read_failed: "讀取檔案失敗，再試一次看看",
+    toast_cant_open_attachment: "打不開這個附件",
+    reco_empty_no_data: "預測不到，請再做多一點任務來幫助我學習你的工作習慣吧",
+    reco_empty_all_added: "沒有更多預測啦",
+    reco_add_title: "加入今天",
+    error_sync_problem: "同步時發生問題，檢查一下網路後重新整理試試",
+    auth_error_invalid_email: "Email 格式不對，檢查一下",
+    auth_error_user_not_found: "找不到這個帳號，要不要改成「註冊新帳號」？",
+    auth_error_wrong_password: "密碼不對，再試一次",
+    auth_error_invalid_credential: "帳號或密碼不對，再確認一次",
+    auth_error_email_in_use: "這個 Email 已經註冊過了，改成「登入」試試",
+    auth_error_weak_password: "密碼至少要 6 個字元",
+    auth_error_too_many_requests: "嘗試太多次了，稍等一下再試",
+    auth_error_generic: "發生錯誤：{code}",
+    error_email_password_required: "請輸入 Email 和密碼",
+    error_email_required: "請輸入 Email",
+    reset_email_sent: "已寄出重設密碼信，記得看一下垃圾郵件夾",
+    error_password_required: "請輸入密碼",
+    verify_email_sent_text: "我們寄了一封驗證信到 {email}，點裡面的連結後回來這裡按「我已驗證」。第一次的信有時候會延遲或收不到，如果等了幾分鐘還是沒看到（記得連垃圾郵件夾一起找），直接按下面的「重寄驗證信」通常第二次就會收到。",
+    verify_not_detected: "還沒偵測到驗證，確認信箱點過連結後再試一次",
+    verify_resent: "已經重新寄出，記得看一下垃圾郵件夾",
+    verify_too_many: "寄太多次了，稍等一下再試",
+    verify_send_failed: "寄送失敗，稍等一下再試",
+    verify_resent_banner: "已重新寄出，記得看垃圾郵件夾",
+    verify_too_many_banner: "寄太多次了，稍等再試",
+    verify_send_failed_banner: "寄送失敗",
+    lang_picker_title: "選擇語言"
+  },
+  "zh-Hans": {
+    app_title: "今日启动台",
+    greeting_morning: "早安", greeting_noon: "午安", greeting_afternoon: "下午好", greeting_evening: "晚上好", greeting_late: "夜深了",
+    greeting_template: "{prefix}，这是你的今日工作台",
+    auth_login_title: "登录", auth_signup_title: "注册新账号",
+    auth_sub: "用 Email 登录，资料就会自动跨设备同步。",
+    auth_switch_cancel: "取消，返回目前账号",
+    label_email: "Email", label_password: "密码",
+    auth_password_placeholder: "至少 6 个字符",
+    auth_forgot_password: "忘记密码？",
+    auth_toggle_to_signup: "改成注册新账号", auth_toggle_to_login: "改成登录",
+    auth_signup_btn: "注册",
+    auth_verify_title: "请先验证 Email",
+    btn_logout: "登出",
+    btn_resend_verification: "重发验证信",
+    btn_already_verified: "我已验证",
+    auth_reset_title: "找回密码",
+    auth_reset_sub: "输入注册时用的、且已验证过的 Email，我们会寄一封重设密码的信给你。",
+    auth_reset_back: "返回登录", auth_reset_submit: "发送重设信",
+    menu_profile: "个人档案", menu_settings: "设置", menu_switch_account: "切换账号",
+    btn_close: "关闭",
+    profile_upload_avatar: "上传头像", profile_display_name: "显示名称", profile_name_placeholder: "你的名字",
+    settings_sub: "资料备份与跨设备相关的功能都在这里。",
+    settings_sync_history: "🔄 同步历史", settings_delete_account: "🗑️ 注销账号",
+    settings_language: "🌐 语言",
+    delete_account_warning: "注销账号会永久删除你的所有资料，且无法恢复。请输入密码确认。",
+    delete_account_password_placeholder: "输入密码确认",
+    btn_cancel: "取消", delete_account_confirm_btn: "确认注销",
+    switch_sub: "选一个在这台设备登录过的账号，或加入新的账号。这里只是快速选择，还是需要输入密码才能登录。",
+    switch_add_account: "+ 登录其他账号",
+    switch_empty: "这台设备上还没有登录记录",
+    switch_remove_title: "从清单移除（不会删除账号）",
+    sync_title: "同步历史",
+    sync_sub: "导出目前所有资料成备份档，或导入之前导出的备份档，换账号时可以用这个互传资料。",
+    sync_drop_text: "把备份档拖到这里，或点击选择档案",
+    sync_import_warning: "这会覆盖目前所有资料，确定要导入吗？",
+    sync_import_confirm_btn: "确认导入", sync_export_btn: "一键导出",
+    sync_invalid_file: "这个档案看起来不是有效的备份档",
+    sync_read_fail: "读取档案失败，再试一次",
+    verify_reminder_text: "还没有验证 Email，记得去信箱点一下验证连结。",
+    verify_dismiss_title: "关闭提醒",
+    capture_heading: "随手记录",
+    capture_placeholder: "想到什么就丢进来，不用想格式…",
+    capture_attach_title: "附加档案（选填）",
+    btn_add: "加入",
+    capture_hint: "打 #分类名称 会自动归类，同时教会系统这类内容以后自动归到这个分类；不打的话系统会用之前学到的规则自动猜分类，猜错了就在项目旁边改一次，它会记住。打「今天/昨天/前天」或「7月9号」这种日期，加上「做了、完成了、done」，会自动判断完成状态和放到哪一天，例如「7月9号投递了6份工作」。",
+    history_summary: "查看过去的收尾记录",
+    routine_heading: "每日例行", routine_hint: "只记录最近日常最重要的三件事",
+    routine_add_placeholder: "新增例行事项…",
+    reco_title: "🔮 今天可能想做",
+    reco_sub: "根据你过去的记录推荐，点 + 直接加进今天",
+    btn_shutdown: "结束今天",
+    routine_fab_title: "每日例行・今天可能想做",
+    ctx_remove_attachment: "🗑 移除附件", ctx_change_category: "改分类",
+    ctx_new_category: "+ 新增分类…", ctx_new_category_placeholder: "新分类名称",
+    btn_confirm_add: "加",
+    ctx_replace_attachment: "📎 更换附件", ctx_add_attachment: "📎 新增附件",
+    shutdown_title: "收尾一下",
+    shutdown_sub: "三格就好，写完明天打开就知道从哪里开始。",
+    shutdown_stuck_label: "现在卡在哪里",
+    shutdown_stuck_placeholder: "例如：报告写到第二段的资料分析，数字还没核对完",
+    shutdown_next_label: "下一步的第一个动作",
+    shutdown_next_hint: "（小到 5 分钟内能做完）",
+    shutdown_next_placeholder: "例如：打开档案，核对表三的数字",
+    shutdown_leftover_label: "今天还没打勾的记录",
+    btn_save_and_end: "保存并结束",
+    hero_drag_title: "拖曳排序", generic_delete_title: "删除",
+    hero_unfinished_tag: "还没做完的（{n}）",
+    hero_start_label: "从这里开始",
+    hero_empty_text: "还没有收尾记录。今天结束时按下方「结束今天」，明天这里就会显示你的第一步。",
+    hero_doing_tag: "现在做这件事",
+    empty_placeholder: "（没有填写）",
+    hero_start_btn: "成功启动！",
+    hero_last_stuck_tag: "上次停在",
+    hero_recorded_at: "记录于 {date}",
+    item_drag_title: "拖曳到别的分类", attachment_remove_title: "移除附件",
+    today_no_records: "今天还没有记录", today_date_label: "今天・{date}",
+    history_empty: "还没有记录",
+    history_stuck_label: "停在：{x}", history_next_label: "下一步：{x}",
+    routine_empty_text: "还没有例行事项，加一个每天想做的小事吧，例如「喝水」「运动 10 分钟」。",
+    routine_progress_text: "今天 {done} / {total} 完成",
+    routine_delete_title: "删除这个例行事项",
+    toast_routine_limit: "每天最多只记录 {n} 件例行事项，先删一个旧的再加新的",
+    capture_pending_attachment: "📎 {name}，加入时会一起附上",
+    capture_cancel_attach_title: "取消附加",
+    toast_file_too_large: "档案太大了（{mb}MB），先支援 2MB 以内的档案",
+    toast_save_failed: "保存失败，可能是空间不足了，换个更小的档案试试",
+    toast_save_failed_attachment: "保存失败，可能是空间不足了，附件换个更小的档案试试",
+    toast_read_failed: "读取档案失败，再试一次看看",
+    toast_cant_open_attachment: "打不开这个附件",
+    reco_empty_no_data: "预测不到，请再做多一点任务来帮助我学习你的工作习惯吧",
+    reco_empty_all_added: "没有更多预测啦",
+    reco_add_title: "加入今天",
+    error_sync_problem: "同步时发生问题，检查一下网路后重新整理试试",
+    auth_error_invalid_email: "Email 格式不对，检查一下",
+    auth_error_user_not_found: "找不到这个账号，要不要改成「注册新账号」？",
+    auth_error_wrong_password: "密码不对，再试一次",
+    auth_error_invalid_credential: "账号或密码不对，再确认一次",
+    auth_error_email_in_use: "这个 Email 已经注册过了，改成「登录」试试",
+    auth_error_weak_password: "密码至少要 6 个字符",
+    auth_error_too_many_requests: "尝试太多次了，稍等一下再试",
+    auth_error_generic: "发生错误：{code}",
+    error_email_password_required: "请输入 Email 和密码",
+    error_email_required: "请输入 Email",
+    reset_email_sent: "已寄出重设密码信，记得看一下垃圾邮件夹",
+    error_password_required: "请输入密码",
+    verify_email_sent_text: "我们寄了一封验证信到 {email}，点里面的连结后回来这里按「我已验证」。第一次的信有时候会延迟或收不到，如果等了几分钟还是没看到（记得连垃圾邮件夹一起找），直接按下面的「重寄验证信」通常第二次就会收到。",
+    verify_not_detected: "还没侦测到验证，确认信箱点过连结后再试一次",
+    verify_resent: "已经重新寄出，记得看一下垃圾邮件夹",
+    verify_too_many: "寄太多次了，稍等一下再试",
+    verify_send_failed: "寄送失败，稍等一下再试",
+    verify_resent_banner: "已重新寄出，记得看垃圾邮件夹",
+    verify_too_many_banner: "寄太多次了，稍等再试",
+    verify_send_failed_banner: "寄送失败",
+    lang_picker_title: "选择语言"
+  },
+  en: {
+    app_title: "Daily Launchpad",
+    greeting_morning: "Good morning", greeting_noon: "Good midday", greeting_afternoon: "Good afternoon", greeting_evening: "Good evening", greeting_late: "It's late",
+    greeting_template: "{prefix}, here's your workspace for today",
+    auth_login_title: "Log in", auth_signup_title: "Create an account",
+    auth_sub: "Log in with email and your data syncs automatically across devices.",
+    auth_switch_cancel: "Cancel, back to current account",
+    label_email: "Email", label_password: "Password",
+    auth_password_placeholder: "At least 6 characters",
+    auth_forgot_password: "Forgot password?",
+    auth_toggle_to_signup: "Switch to sign up", auth_toggle_to_login: "Switch to log in",
+    auth_signup_btn: "Sign up",
+    auth_verify_title: "Please verify your email",
+    btn_logout: "Log out",
+    btn_resend_verification: "Resend verification email",
+    btn_already_verified: "I've verified",
+    auth_reset_title: "Reset password",
+    auth_reset_sub: "Enter the verified email you registered with, and we'll send you a password reset link.",
+    auth_reset_back: "Back to log in", auth_reset_submit: "Send reset email",
+    menu_profile: "Profile", menu_settings: "Settings", menu_switch_account: "Switch account",
+    btn_close: "Close",
+    profile_upload_avatar: "Upload avatar", profile_display_name: "Display name", profile_name_placeholder: "Your name",
+    settings_sub: "Backup and cross-device features live here.",
+    settings_sync_history: "🔄 Sync history", settings_delete_account: "🗑️ Delete account",
+    settings_language: "🌐 Language",
+    delete_account_warning: "Deleting your account permanently erases all your data and can't be undone. Enter your password to confirm.",
+    delete_account_password_placeholder: "Enter your password to confirm",
+    btn_cancel: "Cancel", delete_account_confirm_btn: "Confirm deletion",
+    switch_sub: "Pick an account that's logged in on this device before, or add a new one. This is just a quick shortcut — you'll still need your password to log in.",
+    switch_add_account: "+ Log in with another account",
+    switch_empty: "No login history on this device yet",
+    switch_remove_title: "Remove from list (won't delete the account)",
+    sync_title: "Sync history",
+    sync_sub: "Export all your current data as a backup file, or import a previously exported one — handy for moving data between accounts.",
+    sync_drop_text: "Drag your backup file here, or click to choose one",
+    sync_import_warning: "This will overwrite all your current data — import anyway?",
+    sync_import_confirm_btn: "Confirm import", sync_export_btn: "Export now",
+    sync_invalid_file: "This file doesn't look like a valid backup",
+    sync_read_fail: "Couldn't read the file — try again",
+    verify_reminder_text: "Email not verified yet — check your inbox and click the verification link.",
+    verify_dismiss_title: "Dismiss reminder",
+    capture_heading: "Quick capture",
+    capture_placeholder: "Drop in whatever comes to mind, no need to format it…",
+    capture_attach_title: "Attach a file (optional)",
+    btn_add: "Add",
+    capture_hint: "Type #category to auto-tag it and teach the system to recognize similar entries next time. Skip it and the system guesses based on what it's learned — if it guesses wrong, just correct it once next to the item and it'll remember. Add a date like \"today/yesterday/July 9\" plus a completion word like \"done/finished\", and it'll figure out the status and which day to file it under — e.g. \"Sent 6 job applications on July 9.\"",
+    history_summary: "View past wrap-up notes",
+    routine_heading: "Daily routine", routine_hint: "Just the 3 most important daily things right now",
+    routine_add_placeholder: "Add a routine item…",
+    reco_title: "🔮 You might want to do today",
+    reco_sub: "Suggested from your past records — tap + to add it to today",
+    btn_shutdown: "End the day",
+    routine_fab_title: "Daily routine · Today's suggestions",
+    ctx_remove_attachment: "🗑 Remove attachment", ctx_change_category: "Change category",
+    ctx_new_category: "+ New category…", ctx_new_category_placeholder: "New category name",
+    btn_confirm_add: "Add",
+    ctx_replace_attachment: "📎 Replace attachment", ctx_add_attachment: "📎 Add attachment",
+    shutdown_title: "Wrap up",
+    shutdown_sub: "Just three fields — fill them in and tomorrow you'll know exactly where to start.",
+    shutdown_stuck_label: "What's blocking you right now",
+    shutdown_stuck_placeholder: "e.g. Report is stuck on the section 2 data analysis, numbers not double-checked yet",
+    shutdown_next_label: "The very first next step",
+    shutdown_next_hint: "(small enough to finish in 5 minutes)",
+    shutdown_next_placeholder: "e.g. Open the file, check the numbers in table 3",
+    shutdown_leftover_label: "Today's unchecked items",
+    btn_save_and_end: "Save and end",
+    hero_drag_title: "Drag to reorder", generic_delete_title: "Delete",
+    hero_unfinished_tag: "Unfinished ({n})",
+    hero_start_label: "Start here",
+    hero_empty_text: "No wrap-up yet. Tap \"End the day\" below when you're done today, and tomorrow this spot will show your first step.",
+    hero_doing_tag: "Do this now",
+    empty_placeholder: "(not filled in)",
+    hero_start_btn: "Started!",
+    hero_last_stuck_tag: "Last stopped at",
+    hero_recorded_at: "Recorded on {date}",
+    item_drag_title: "Drag to another category", attachment_remove_title: "Remove attachment",
+    today_no_records: "Nothing recorded today yet", today_date_label: "Today・{date}",
+    history_empty: "No records yet",
+    history_stuck_label: "Blocked on: {x}", history_next_label: "Next: {x}",
+    routine_empty_text: "No routine items yet — add a small daily thing, like \"drink water\" or \"exercise 10 min\".",
+    routine_progress_text: "{done} / {total} done today",
+    routine_delete_title: "Delete this routine item",
+    toast_routine_limit: "You can track at most {n} routine items — delete an old one before adding a new one",
+    capture_pending_attachment: "📎 {name} — will be attached when added",
+    capture_cancel_attach_title: "Cancel attachment",
+    toast_file_too_large: "File is too large ({mb}MB) — only files under 2MB are supported for now",
+    toast_save_failed: "Save failed — you might be out of storage space, try a smaller file",
+    toast_save_failed_attachment: "Save failed — you might be out of storage space, try a smaller attachment",
+    toast_read_failed: "Couldn't read the file — try again",
+    toast_cant_open_attachment: "Can't open this attachment",
+    reco_empty_no_data: "Not enough data to predict yet — log a few more tasks so I can learn your habits",
+    reco_empty_all_added: "No more suggestions for now",
+    reco_add_title: "Add to today",
+    error_sync_problem: "Something went wrong syncing — check your connection and refresh",
+    auth_error_invalid_email: "That email format doesn't look right",
+    auth_error_user_not_found: "Can't find this account — want to switch to \"Create an account\"?",
+    auth_error_wrong_password: "Wrong password — try again",
+    auth_error_invalid_credential: "Account or password is incorrect — double-check it",
+    auth_error_email_in_use: "This email is already registered — try \"Log in\" instead",
+    auth_error_weak_password: "Password needs at least 6 characters",
+    auth_error_too_many_requests: "Too many attempts — wait a bit and try again",
+    auth_error_generic: "Something went wrong: {code}",
+    error_email_password_required: "Please enter your email and password",
+    error_email_required: "Please enter your email",
+    reset_email_sent: "Password reset email sent — check your spam folder too",
+    error_password_required: "Please enter your password",
+    verify_email_sent_text: "We sent a verification email to {email}. Click the link inside, then come back and tap \"I've verified\". The first email sometimes gets delayed or lost — if a few minutes pass and you still don't see it (check your spam folder too), tap \"Resend verification email\" below and it usually arrives the second time.",
+    verify_not_detected: "Verification not detected yet — make sure you clicked the link, then try again",
+    verify_resent: "Resent — check your spam folder too",
+    verify_too_many: "Sent too many times — wait a bit and try again",
+    verify_send_failed: "Send failed — wait a bit and try again",
+    verify_resent_banner: "Resent — check your spam folder",
+    verify_too_many_banner: "Sent too many times — wait and try again",
+    verify_send_failed_banner: "Send failed",
+    lang_picker_title: "Choose language"
+  },
+  ko: {
+    app_title: "오늘의 시작대",
+    greeting_morning: "좋은 아침이에요", greeting_noon: "좋은 점심이에요", greeting_afternoon: "좋은 오후예요", greeting_evening: "좋은 저녁이에요", greeting_late: "밤이 깊었네요",
+    greeting_template: "{prefix}, 오늘의 작업 공간이에요",
+    auth_login_title: "로그인", auth_signup_title: "새 계정 만들기",
+    auth_sub: "이메일로 로그인하면 데이터가 기기 간에 자동으로 동기화돼요.",
+    auth_switch_cancel: "취소하고 현재 계정으로 돌아가기",
+    label_email: "Email", label_password: "비밀번호",
+    auth_password_placeholder: "최소 6자 이상",
+    auth_forgot_password: "비밀번호를 잊으셨나요?",
+    auth_toggle_to_signup: "새 계정 만들기로 전환", auth_toggle_to_login: "로그인으로 전환",
+    auth_signup_btn: "가입하기",
+    auth_verify_title: "먼저 이메일을 인증해 주세요",
+    btn_logout: "로그아웃",
+    btn_resend_verification: "인증 메일 다시 보내기",
+    btn_already_verified: "인증 완료했어요",
+    auth_reset_title: "비밀번호 찾기",
+    auth_reset_sub: "가입할 때 사용한, 인증이 완료된 이메일을 입력하면 비밀번호 재설정 메일을 보내드려요.",
+    auth_reset_back: "로그인으로 돌아가기", auth_reset_submit: "재설정 메일 보내기",
+    menu_profile: "프로필", menu_settings: "설정", menu_switch_account: "계정 전환",
+    btn_close: "닫기",
+    profile_upload_avatar: "아바타 업로드", profile_display_name: "표시 이름", profile_name_placeholder: "이름을 입력하세요",
+    settings_sub: "백업과 기기 간 동기화 관련 기능이 여기 있어요.",
+    settings_sync_history: "🔄 동기화 기록", settings_delete_account: "🗑️ 계정 삭제",
+    settings_language: "🌐 언어",
+    delete_account_warning: "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없어요. 비밀번호를 입력해 확인해 주세요.",
+    delete_account_password_placeholder: "확인할 비밀번호를 입력하세요",
+    btn_cancel: "취소", delete_account_confirm_btn: "삭제 확인",
+    switch_sub: "이 기기에서 로그인한 적 있는 계정을 선택하거나 새 계정을 추가하세요. 빠른 선택일 뿐 로그인하려면 여전히 비밀번호가 필요해요.",
+    switch_add_account: "+ 다른 계정으로 로그인",
+    switch_empty: "이 기기에는 아직 로그인 기록이 없어요",
+    switch_remove_title: "목록에서 제거 (계정은 삭제되지 않아요)",
+    sync_title: "동기화 기록",
+    sync_sub: "현재 모든 데이터를 백업 파일로 내보내거나, 이전에 내보낸 백업 파일을 가져올 수 있어요. 계정을 바꿀 때 데이터를 옮기는 데 유용해요.",
+    sync_drop_text: "백업 파일을 여기로 끌어오거나 클릭해서 선택하세요",
+    sync_import_warning: "현재 모든 데이터를 덮어써요. 그래도 가져올까요?",
+    sync_import_confirm_btn: "가져오기 확인", sync_export_btn: "한 번에 내보내기",
+    sync_invalid_file: "이 파일은 유효한 백업 파일이 아닌 것 같아요",
+    sync_read_fail: "파일을 읽지 못했어요. 다시 시도해 주세요",
+    verify_reminder_text: "이메일 인증이 아직 안 됐어요. 받은편지함에서 인증 링크를 눌러 주세요.",
+    verify_dismiss_title: "알림 닫기",
+    capture_heading: "빠른 기록",
+    capture_placeholder: "생각나는 대로 편하게 적어보세요…",
+    capture_attach_title: "파일 첨부 (선택)",
+    btn_add: "추가",
+    capture_hint: "#분류이름을 입력하면 자동으로 분류되고, 시스템이 이 내용을 학습해서 다음에도 자동으로 이 분류로 넣어줘요. 안 적으면 이전에 배운 규칙으로 자동 추측하고, 틀리면 항목 옆에서 한 번만 고치면 기억해요. \"오늘/어제/그제\"나 \"7월 9일\" 같은 날짜에 \"했음/완료/done\" 같은 표현을 더하면 완료 상태와 날짜를 자동으로 판단해요. 예: \"7월 9일에 지원서 6개 넣었음\".",
+    history_summary: "지난 마무리 기록 보기",
+    routine_heading: "매일 루틴", routine_hint: "지금 가장 중요한 일상 3가지만",
+    routine_add_placeholder: "루틴 항목 추가…",
+    reco_title: "🔮 오늘 하고 싶을 만한 일",
+    reco_sub: "지난 기록을 바탕으로 추천해요. +를 눌러 오늘에 바로 추가하세요",
+    btn_shutdown: "오늘 마무리",
+    routine_fab_title: "매일 루틴 · 오늘의 추천",
+    ctx_remove_attachment: "🗑 첨부파일 제거", ctx_change_category: "분류 변경",
+    ctx_new_category: "+ 새 분류…", ctx_new_category_placeholder: "새 분류 이름",
+    btn_confirm_add: "추가",
+    ctx_replace_attachment: "📎 첨부파일 교체", ctx_add_attachment: "📎 첨부파일 추가",
+    shutdown_title: "마무리하기",
+    shutdown_sub: "세 칸이면 충분해요. 작성해두면 내일 어디서부터 시작할지 바로 알 수 있어요.",
+    shutdown_stuck_label: "지금 막힌 부분",
+    shutdown_stuck_placeholder: "예: 보고서 2단락 데이터 분석까지 썼는데 숫자 확인이 안 끝남",
+    shutdown_next_label: "다음 첫 번째 행동",
+    shutdown_next_hint: "(5분 안에 끝낼 수 있을 만큼 작게)",
+    shutdown_next_placeholder: "예: 파일 열고 표3 숫자 확인하기",
+    shutdown_leftover_label: "오늘 체크 안 된 항목",
+    btn_save_and_end: "저장하고 마무리",
+    hero_drag_title: "드래그해서 순서 바꾸기", generic_delete_title: "삭제",
+    hero_unfinished_tag: "아직 안 끝난 항목 ({n})",
+    hero_start_label: "여기서 시작하세요",
+    hero_empty_text: "아직 마무리 기록이 없어요. 오늘 끝날 때 아래 \"오늘 마무리\"를 누르면, 내일 여기에 첫 걸음이 표시돼요.",
+    hero_doing_tag: "지금 이걸 하세요",
+    empty_placeholder: "(입력 안 됨)",
+    hero_start_btn: "시작 성공!",
+    hero_last_stuck_tag: "지난번 멈춘 지점",
+    hero_recorded_at: "{date}에 기록됨",
+    item_drag_title: "다른 분류로 드래그", attachment_remove_title: "첨부파일 제거",
+    today_no_records: "오늘 기록이 아직 없어요", today_date_label: "오늘・{date}",
+    history_empty: "아직 기록이 없어요",
+    history_stuck_label: "막힌 지점: {x}", history_next_label: "다음 단계: {x}",
+    routine_empty_text: "아직 루틴이 없어요. \"물 마시기\", \"운동 10분\" 같은 작은 일상을 추가해보세요.",
+    routine_progress_text: "오늘 {done} / {total} 완료",
+    routine_delete_title: "이 루틴 항목 삭제",
+    toast_routine_limit: "하루에 루틴은 최대 {n}개까지예요. 새로 추가하려면 기존 걸 먼저 삭제하세요",
+    capture_pending_attachment: "📎 {name} — 추가할 때 함께 첨부돼요",
+    capture_cancel_attach_title: "첨부 취소",
+    toast_file_too_large: "파일이 너무 커요 ({mb}MB). 현재는 2MB 이하만 지원돼요",
+    toast_save_failed: "저장 실패 — 저장 공간이 부족할 수 있어요. 더 작은 파일로 시도해보세요",
+    toast_save_failed_attachment: "저장 실패 — 저장 공간이 부족할 수 있어요. 더 작은 첨부파일로 시도해보세요",
+    toast_read_failed: "파일을 읽지 못했어요. 다시 시도해보세요",
+    toast_cant_open_attachment: "이 첨부파일을 열 수 없어요",
+    reco_empty_no_data: "아직 예측할 데이터가 부족해요. 몇 가지 더 기록하면 습관을 학습할 수 있어요",
+    reco_empty_all_added: "더 이상 추천할 게 없어요",
+    reco_add_title: "오늘에 추가",
+    error_sync_problem: "동기화 중 문제가 발생했어요. 네트워크를 확인하고 새로고침해보세요",
+    auth_error_invalid_email: "이메일 형식이 올바르지 않아요",
+    auth_error_user_not_found: "이 계정을 찾을 수 없어요. \"새 계정 만들기\"로 전환할까요?",
+    auth_error_wrong_password: "비밀번호가 틀렸어요. 다시 시도해주세요",
+    auth_error_invalid_credential: "계정 또는 비밀번호가 올바르지 않아요. 다시 확인해주세요",
+    auth_error_email_in_use: "이미 가입된 이메일이에요. \"로그인\"으로 시도해보세요",
+    auth_error_weak_password: "비밀번호는 최소 6자 이상이어야 해요",
+    auth_error_too_many_requests: "시도 횟수가 너무 많아요. 잠시 후 다시 시도해주세요",
+    auth_error_generic: "오류가 발생했어요: {code}",
+    error_email_password_required: "이메일과 비밀번호를 입력해주세요",
+    error_email_required: "이메일을 입력해주세요",
+    reset_email_sent: "비밀번호 재설정 메일을 보냈어요. 스팸함도 확인해보세요",
+    error_password_required: "비밀번호를 입력해주세요",
+    verify_email_sent_text: "{email}로 인증 메일을 보냈어요. 메일 속 링크를 누른 뒤 여기로 돌아와서 \"인증 완료했어요\"를 눌러주세요. 첫 메일은 가끔 지연되거나 오지 않을 수 있어요. 몇 분 기다려도 안 보이면 (스팸함도 확인해주세요) 아래 \"인증 메일 다시 보내기\"를 누르면 대부분 두 번째에는 도착해요.",
+    verify_not_detected: "아직 인증이 확인되지 않았어요. 메일의 링크를 눌렀는지 확인 후 다시 시도해주세요",
+    verify_resent: "다시 보냈어요. 스팸함도 확인해주세요",
+    verify_too_many: "너무 많이 보냈어요. 잠시 후 다시 시도해주세요",
+    verify_send_failed: "전송 실패. 잠시 후 다시 시도해주세요",
+    verify_resent_banner: "다시 보냈어요. 스팸함을 확인해주세요",
+    verify_too_many_banner: "너무 많이 보냈어요. 잠시 후 다시 시도해주세요",
+    verify_send_failed_banner: "전송 실패",
+    lang_picker_title: "언어 선택"
+  },
+  es: {
+    app_title: "Panel de Inicio Diario",
+    greeting_morning: "Buenos días", greeting_noon: "Buen mediodía", greeting_afternoon: "Buenas tardes", greeting_evening: "Buenas noches", greeting_late: "Ya es tarde",
+    greeting_template: "{prefix}, este es tu espacio de trabajo de hoy",
+    auth_login_title: "Iniciar sesión", auth_signup_title: "Crear una cuenta",
+    auth_sub: "Inicia sesión con tu correo y tus datos se sincronizarán automáticamente entre dispositivos.",
+    auth_switch_cancel: "Cancelar y volver a la cuenta actual",
+    label_email: "Email", label_password: "Contraseña",
+    auth_password_placeholder: "Al menos 6 caracteres",
+    auth_forgot_password: "¿Olvidaste tu contraseña?",
+    auth_toggle_to_signup: "Cambiar a crear cuenta", auth_toggle_to_login: "Cambiar a iniciar sesión",
+    auth_signup_btn: "Registrarse",
+    auth_verify_title: "Verifica tu correo primero",
+    btn_logout: "Cerrar sesión",
+    btn_resend_verification: "Reenviar correo de verificación",
+    btn_already_verified: "Ya lo verifiqué",
+    auth_reset_title: "Recuperar contraseña",
+    auth_reset_sub: "Ingresa el correo verificado con el que te registraste y te enviaremos un enlace para restablecer tu contraseña.",
+    auth_reset_back: "Volver a iniciar sesión", auth_reset_submit: "Enviar correo de restablecimiento",
+    menu_profile: "Perfil", menu_settings: "Configuración", menu_switch_account: "Cambiar de cuenta",
+    btn_close: "Cerrar",
+    profile_upload_avatar: "Subir avatar", profile_display_name: "Nombre visible", profile_name_placeholder: "Tu nombre",
+    settings_sub: "Aquí están las funciones de copia de seguridad y sincronización entre dispositivos.",
+    settings_sync_history: "🔄 Historial de sincronización", settings_delete_account: "🗑️ Eliminar cuenta",
+    settings_language: "🌐 Idioma",
+    delete_account_warning: "Eliminar tu cuenta borrará todos tus datos de forma permanente y no se puede deshacer. Ingresa tu contraseña para confirmar.",
+    delete_account_password_placeholder: "Ingresa tu contraseña para confirmar",
+    btn_cancel: "Cancelar", delete_account_confirm_btn: "Confirmar eliminación",
+    switch_sub: "Elige una cuenta que ya haya iniciado sesión en este dispositivo, o agrega una nueva. Esto es solo un atajo — igual necesitarás tu contraseña para iniciar sesión.",
+    switch_add_account: "+ Iniciar sesión con otra cuenta",
+    switch_empty: "Aún no hay historial de inicio de sesión en este dispositivo",
+    switch_remove_title: "Quitar de la lista (no elimina la cuenta)",
+    sync_title: "Historial de sincronización",
+    sync_sub: "Exporta todos tus datos actuales como archivo de respaldo, o importa uno exportado antes — útil para mover datos entre cuentas.",
+    sync_drop_text: "Arrastra tu archivo de respaldo aquí, o haz clic para elegirlo",
+    sync_import_warning: "Esto sobrescribirá todos tus datos actuales — ¿deseas continuar?",
+    sync_import_confirm_btn: "Confirmar importación", sync_export_btn: "Exportar ahora",
+    sync_invalid_file: "Este archivo no parece ser una copia de seguridad válida",
+    sync_read_fail: "No se pudo leer el archivo — inténtalo de nuevo",
+    verify_reminder_text: "Aún no verificas tu correo — revisa tu bandeja y haz clic en el enlace de verificación.",
+    verify_dismiss_title: "Cerrar recordatorio",
+    capture_heading: "Captura rápida",
+    capture_placeholder: "Anota lo que se te ocurra, sin preocuparte por el formato…",
+    capture_attach_title: "Adjuntar archivo (opcional)",
+    btn_add: "Agregar",
+    capture_hint: "Escribe #categoría para clasificarlo automáticamente y enseñarle al sistema a reconocer entradas similares la próxima vez. Si no lo haces, el sistema adivina según lo aprendido — si se equivoca, corrígelo una vez junto al elemento y lo recordará. Agrega una fecha como \"hoy/ayer/9 de julio\" más una palabra de finalización como \"hecho/terminado\", y detectará el estado y en qué día archivarlo — por ejemplo: \"Envié 6 solicitudes de empleo el 9 de julio.\"",
+    history_summary: "Ver notas de cierre anteriores",
+    routine_heading: "Rutina diaria", routine_hint: "Solo las 3 cosas diarias más importantes ahora mismo",
+    routine_add_placeholder: "Agregar un elemento de rutina…",
+    reco_title: "🔮 Quizás quieras hacer hoy",
+    reco_sub: "Sugerido según tus registros anteriores — toca + para añadirlo a hoy",
+    btn_shutdown: "Terminar el día",
+    routine_fab_title: "Rutina diaria · Sugerencias de hoy",
+    ctx_remove_attachment: "🗑 Quitar archivo adjunto", ctx_change_category: "Cambiar categoría",
+    ctx_new_category: "+ Nueva categoría…", ctx_new_category_placeholder: "Nombre de la nueva categoría",
+    btn_confirm_add: "Agregar",
+    ctx_replace_attachment: "📎 Reemplazar archivo adjunto", ctx_add_attachment: "📎 Agregar archivo adjunto",
+    shutdown_title: "Cerrar el día",
+    shutdown_sub: "Solo tres campos — complétalos y mañana sabrás exactamente por dónde empezar.",
+    shutdown_stuck_label: "En qué estás atascada ahora",
+    shutdown_stuck_placeholder: "p. ej.: El informe está atascado en el análisis de datos de la sección 2, faltan revisar los números",
+    shutdown_next_label: "El primer siguiente paso",
+    shutdown_next_hint: "(lo bastante pequeño para terminarlo en 5 minutos)",
+    shutdown_next_placeholder: "p. ej.: Abrir el archivo, revisar los números de la tabla 3",
+    shutdown_leftover_label: "Elementos sin marcar hoy",
+    btn_save_and_end: "Guardar y terminar",
+    hero_drag_title: "Arrastra para reordenar", generic_delete_title: "Eliminar",
+    hero_unfinished_tag: "Sin terminar ({n})",
+    hero_start_label: "Empieza aquí",
+    hero_empty_text: "Aún no hay cierre. Toca \"Terminar el día\" abajo cuando termines hoy, y mañana aquí verás tu primer paso.",
+    hero_doing_tag: "Haz esto ahora",
+    empty_placeholder: "(sin completar)",
+    hero_start_btn: "¡Empezado!",
+    hero_last_stuck_tag: "Última vez te quedaste en",
+    hero_recorded_at: "Registrado el {date}",
+    item_drag_title: "Arrastra a otra categoría", attachment_remove_title: "Quitar archivo adjunto",
+    today_no_records: "Aún no hay nada registrado hoy", today_date_label: "Hoy・{date}",
+    history_empty: "Aún no hay registros",
+    history_stuck_label: "Atascado en: {x}", history_next_label: "Siguiente: {x}",
+    routine_empty_text: "Aún no hay elementos de rutina — agrega algo pequeño del día a día, como \"beber agua\" o \"ejercicio 10 min\".",
+    routine_progress_text: "{done} / {total} completados hoy",
+    routine_delete_title: "Eliminar este elemento de rutina",
+    toast_routine_limit: "Puedes registrar máximo {n} elementos de rutina — elimina uno antes de agregar otro",
+    capture_pending_attachment: "📎 {name} — se adjuntará al agregarlo",
+    capture_cancel_attach_title: "Cancelar adjunto",
+    toast_file_too_large: "El archivo es muy grande ({mb}MB) — por ahora solo se admiten archivos de menos de 2MB",
+    toast_save_failed: "Error al guardar — puede que no haya espacio suficiente, prueba con un archivo más pequeño",
+    toast_save_failed_attachment: "Error al guardar — puede que no haya espacio suficiente, prueba con un archivo adjunto más pequeño",
+    toast_read_failed: "No se pudo leer el archivo — inténtalo de nuevo",
+    toast_cant_open_attachment: "No se puede abrir este archivo adjunto",
+    reco_empty_no_data: "Aún no hay suficientes datos para predecir — registra algunas tareas más para que pueda aprender tus hábitos",
+    reco_empty_all_added: "No hay más sugerencias por ahora",
+    reco_add_title: "Añadir a hoy",
+    error_sync_problem: "Hubo un problema al sincronizar — revisa tu conexión y recarga la página",
+    auth_error_invalid_email: "El formato del correo no es válido",
+    auth_error_user_not_found: "No encontramos esta cuenta — ¿quieres cambiar a \"Crear una cuenta\"?",
+    auth_error_wrong_password: "Contraseña incorrecta — inténtalo de nuevo",
+    auth_error_invalid_credential: "La cuenta o contraseña no es correcta — vuelve a verificarla",
+    auth_error_email_in_use: "Este correo ya está registrado — intenta \"Iniciar sesión\"",
+    auth_error_weak_password: "La contraseña debe tener al menos 6 caracteres",
+    auth_error_too_many_requests: "Demasiados intentos — espera un momento e inténtalo de nuevo",
+    auth_error_generic: "Ocurrió un error: {code}",
+    error_email_password_required: "Ingresa tu correo y contraseña",
+    error_email_required: "Ingresa tu correo",
+    reset_email_sent: "Correo de restablecimiento enviado — revisa también tu carpeta de spam",
+    error_password_required: "Ingresa tu contraseña",
+    verify_email_sent_text: "Enviamos un correo de verificación a {email}. Haz clic en el enlace de adentro y vuelve aquí para tocar \"Ya lo verifiqué\". El primer correo a veces se retrasa o no llega — si pasan varios minutos y no lo ves (revisa también tu carpeta de spam), toca \"Reenviar correo de verificación\" abajo, normalmente llega la segunda vez.",
+    verify_not_detected: "Aún no detectamos la verificación — asegúrate de haber hecho clic en el enlace y vuelve a intentarlo",
+    verify_resent: "Reenviado — revisa también tu carpeta de spam",
+    verify_too_many: "Se envió demasiadas veces — espera un momento e inténtalo de nuevo",
+    verify_send_failed: "Error al enviar — espera un momento e inténtalo de nuevo",
+    verify_resent_banner: "Reenviado — revisa tu carpeta de spam",
+    verify_too_many_banner: "Se envió demasiadas veces — espera e inténtalo de nuevo",
+    verify_send_failed_banner: "Error al enviar",
+    lang_picker_title: "Elegir idioma"
+  }
+};
+
+const WEEKDAY_NAMES = {
+  "zh-Hant": ["週日","週一","週二","週三","週四","週五","週六"],
+  "zh-Hans": ["周日","周一","周二","周三","周四","周五","周六"],
+  en: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+  ko: ["일요일","월요일","화요일","수요일","목요일","금요일","토요일"],
+  es: ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"]
+};
+
+let currentLang = "zh-Hant";
+try {
+  const saved = localStorage.getItem("qc_lang_v1");
+  if (saved && I18N[saved]) currentLang = saved;
+} catch (e) {}
+
+function t(key, vars) {
+  const dict = I18N[currentLang] || I18N["zh-Hant"];
+  let str = dict[key] !== undefined ? dict[key] : (I18N["zh-Hant"][key] !== undefined ? I18N["zh-Hant"][key] : key);
+  if (vars) {
+    Object.keys(vars).forEach(k => { str = str.split("{" + k + "}").join(vars[k]); });
+  }
+  return str;
+}
+
+// Last-week-same-weekday label used by the recommendation panel — word order
+// differs enough per language that plain {token} substitution isn't enough.
+function lastWeekdayLabel(dayIdx) {
+  const w = (WEEKDAY_NAMES[currentLang] || WEEKDAY_NAMES["zh-Hant"])[dayIdx];
+  switch (currentLang) {
+    case "en": return "last " + w;
+    case "ko": return "지난 " + w;
+    case "es": return "el " + w + " pasado";
+    default: return "上" + w; // zh-Hant / zh-Hans
+  }
+}
+function recoSequenceSentence(label, oldText, newText) {
+  switch (currentLang) {
+    case "en": return `${label} you did "${oldText}" — want to continue with "${newText}" today?`;
+    case "ko": return `${label}에 "${oldText}"을 하셨네요. 오늘은 "${newText}" 이어서 해볼까요?`;
+    case "es": return `${label} hiciste "${oldText}" — ¿hoy quieres continuar con "${newText}"?`;
+    case "zh-Hans": return `${label}你做了「${oldText}」，今天想接着做「${newText}」吗？`;
+    default: return `${label}妳做了「${oldText}」，今天想接著做「${newText}」嗎？`;
+  }
+}
+function recoWeekdayPattern(weekdayName) {
+  switch (currentLang) {
+    case "en": return `Often on ${weekdayName}`;
+    case "ko": return `${weekdayName}에 자주 함`;
+    case "es": return `Frecuente los ${weekdayName}`;
+    default: return `${weekdayName}常做`;
+  }
+}
+function recoRoutineSkip(weekdayName) {
+  switch (currentLang) {
+    case "en": return `Often skipped on ${weekdayName}`;
+    case "ko": return `${weekdayName}에 자주 빼먹음`;
+    case "es": return `Se salta seguido los ${weekdayName}`;
+    default: return `${weekdayName}常忘記做`;
+  }
+}
+
+// Sets currentLang, persists it, re-applies every static label, and re-runs
+// whatever dynamic render functions initApp registered (only present once
+// logged in — before that, applyStaticI18n() alone covers the login screen).
+function setLang(lang) {
+  if (!I18N[lang]) return;
+  currentLang = lang;
+  try { localStorage.setItem("qc_lang_v1", lang); } catch (e) {}
+  applyStaticI18n();
+  if (window.__i18nRerender) window.__i18nRerender();
+}
+window.t = t;
+window.setLang = setLang;
+window.getCurrentLang = function () { return currentLang; };
+
+// Applies every static (non-dynamically-rendered) string in the page —
+// safe to call before login (covers the auth screen) and after (covers
+// everything else). Dynamic content re-renders separately via __i18nRerender.
+function applyStaticI18n() {
+  const map = {
+    authSub: "auth_sub",
+    switchCancelBtn: "auth_switch_cancel",
+    forgotPasswordBtn: "auth_forgot_password",
+    authSubmitBtn: "auth_login_title",
+    verifyLogoutBtn: "btn_logout",
+    resendVerifyBtn: "btn_resend_verification",
+    checkVerifyBtn: "btn_already_verified",
+    resetBackBtn: "auth_reset_back",
+    resetSubmitBtn: "auth_reset_submit",
+    resetEmail: null,
+    openProfileBtn: "menu_profile",
+    openSettingsBtn: "menu_settings",
+    switchAccountBtn: "menu_switch_account",
+    profileLogoutBtn: "btn_logout",
+    profileOverlayCloseBtn: null,
+    avatarUploadBtn: "profile_upload_avatar",
+    settingsOverlayCloseBtn: null,
+    syncHistoryBtn: "settings_sync_history",
+    deleteAccountBtn: "settings_delete_account",
+    deleteAccountCancelBtn: "btn_cancel",
+    deleteAccountConfirmBtn: "delete_account_confirm_btn",
+    switchCloseBtn: null,
+    switchAddAccountBtn: "switch_add_account",
+    syncCloseBtn: null,
+    syncImportCancelBtn: "btn_cancel",
+    syncImportConfirmBtn: "sync_import_confirm_btn",
+    syncExportBtn: "sync_export_btn",
+    reminderResendBtn: "btn_resend_verification",
+    addBtn: "btn_add",
+    ctxNewCatToggle: "ctx_new_category",
+    ctxNewCatConfirm: "btn_confirm_add",
+    cancelBtn: "btn_cancel",
+    saveBtn: "btn_save_and_end",
+    routineAddBtn: null,
+    routineFab: null,
+    shutdownBtn: "btn_shutdown"
+  };
+  Object.keys(map).forEach(id => {
+    const key = map[id];
+    if (!key) return;
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(key);
+  });
+
+  const titleEl = document.getElementById("authTitle");
+  if (titleEl) titleEl.textContent = t(document.body.dataset.authMode === "signup" ? "auth_signup_title" : "auth_login_title");
+  const toggleEl = document.getElementById("authToggleBtn");
+  if (toggleEl) toggleEl.textContent = t(document.body.dataset.authMode === "signup" ? "auth_toggle_to_login" : "auth_toggle_to_signup");
+  const submitEl = document.getElementById("authSubmitBtn");
+  if (submitEl) submitEl.textContent = t(document.body.dataset.authMode === "signup" ? "auth_signup_btn" : "auth_login_title");
+
+  const placeholders = {
+    authEmail: null,
+    authPassword: "auth_password_placeholder",
+    resetEmail: null,
+    displayNameInput: "profile_name_placeholder",
+    deleteAccountPassword: "delete_account_password_placeholder",
+    captureInput: "capture_placeholder",
+    routineInput: "routine_add_placeholder",
+    ctxNewCatInput: "ctx_new_category_placeholder",
+    actionInput: "shutdown_next_placeholder",
+    stuckInput: "shutdown_stuck_placeholder"
+  };
+  Object.keys(placeholders).forEach(id => {
+    const key = placeholders[id];
+    if (!key) return;
+    const el = document.getElementById(id);
+    if (el) el.placeholder = t(key);
+  });
+
+  const titles = {
+    profileOverlayCloseBtn: "btn_close",
+    settingsOverlayCloseBtn: "btn_close",
+    switchCloseBtn: "btn_close",
+    syncCloseBtn: "btn_close",
+    routineDrawerCloseBtn: "btn_close",
+    newAttachBtn: "capture_attach_title",
+    reminderDismissBtn: "verify_dismiss_title",
+    routineFab: "routine_fab_title"
+  };
+  Object.keys(titles).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.title = t(titles[id]);
+  });
+
+  const staticText = {
+    profileTitleH3: "menu_profile",
+    settingsTitleH3: "menu_settings",
+    settingsSub: "settings_sub",
+    switchTitleH3: "menu_switch_account",
+    switchSub: "switch_sub",
+    syncTitleH3: "sync_title",
+    syncSub: "sync_sub",
+    syncDropText: "sync_drop_text",
+    syncImportWarning: "sync_import_warning",
+    deleteAccountWarning: "delete_account_warning",
+    labelEmail1: "label_email",
+    labelPassword1: "label_password",
+    labelDisplayName: "profile_display_name",
+    labelPasswordDelete: "label_password",
+    appHeading: "app_title",
+    captureHeading: "capture_heading",
+    captureHint: "capture_hint",
+    historySummary: "history_summary",
+    routineHeadingText: "routine_heading",
+    routineHintText: "routine_hint",
+    recoTitleText: "reco_title",
+    recoSubText: "reco_sub",
+    ctxChangeCategoryLabel: "ctx_change_category",
+    shutdownTitleH3: "shutdown_title",
+    shutdownSub: "shutdown_sub",
+    shutdownStuckLabel: "shutdown_stuck_label",
+    shutdownNextLabel: "shutdown_next_label",
+    shutdownNextHint: "shutdown_next_hint",
+    shutdownLeftoverLabel: "shutdown_leftover_label",
+    verifyReminderText: "verify_reminder_text",
+    resetTitleH3: "auth_reset_title",
+    resetSub: "auth_reset_sub",
+    verifyTitleH3: "auth_verify_title",
+    labelEmailReset: "label_email"
+  };
+  Object.keys(staticText).forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t(staticText[id]);
+  });
+
+  document.title = t("app_title");
+  const ctxRemoveBtn = document.getElementById("ctxRemoveBtn");
+  if (ctxRemoveBtn) ctxRemoveBtn.textContent = t("ctx_remove_attachment");
+  const langRow = document.getElementById("openLanguageBtn");
+  if (langRow) langRow.title = t("settings_language");
+}
+
+// Translate the login screen immediately, before any auth state is known —
+// applyStaticI18n() only touches elements that already exist in the initial
+// HTML (the auth overlay is part of that), so this is safe to call this early.
+applyStaticI18n();
+
+// Language picker: a device-wide setting (not per-account, not cloud-synced —
+// deliberately simple), reachable from Settings once logged in. The trigger
+// row and this picker's own title are hardcoded in every script simultaneously
+// (see the HTML) so someone who can't read the current UI language can still
+// recognize their own language's name and find their way here.
+document.getElementById("openLanguageBtn").addEventListener("click", () => {
+  const listEl = document.getElementById("langOptionList");
+  listEl.innerHTML = LANGS.map(code => `
+    <button type="button" class="context-menu-item" data-lang="${code}" style="display:flex; align-items:center; justify-content:space-between;">
+      <span>${LANG_NATIVE_NAMES[code]}</span>
+      <span style="color:#C6613F;">${code === currentLang ? "✓" : ""}</span>
+    </button>
+  `).join("");
+  document.getElementById("settingsOverlay").classList.remove("open");
+  document.getElementById("langOverlay").classList.add("open");
+});
+document.getElementById("langCloseBtn").addEventListener("click", () => {
+  document.getElementById("langOverlay").classList.remove("open");
+});
+document.getElementById("langOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "langOverlay") document.getElementById("langOverlay").classList.remove("open");
+});
+document.getElementById("langOptionList").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-lang]");
+  if (!btn) return;
+  setLang(btn.getAttribute("data-lang"));
+  document.getElementById("langOverlay").classList.remove("open");
+});
+
 window.initApp = function () {
   const LS_CAPTURES = "qc_captures_v1";
   const LS_HISTORY = "qc_history_v1";
@@ -1129,7 +1977,9 @@ window.initApp = function () {
     return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
   };
 
-  const weekday = ["週日","週一","週二","週三","週四","週五","週六"];
+  // Reads live off currentLang (module-level, defined above initApp) rather
+  // than a fixed array, so every weekday label follows the active language.
+  const weekday = new Proxy({}, { get: (_, idx) => (WEEKDAY_NAMES[currentLang] || WEEKDAY_NAMES["zh-Hant"])[idx] });
   function formatDateLine(d) {
     d = d || effectiveNow();
     return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ・ ${weekday[d.getDay()]}`;
@@ -1243,7 +2093,7 @@ window.initApp = function () {
     return `
       <span class="attach-badge">
         <button class="attach-open" data-id="${it.id}" data-date="${it._dateKey}" title="${escapeHtml(it.attachment.name)}">📎 ${escapeHtml(truncateName(it.attachment.name))}</button>
-        <button class="attach-remove" data-id="${it.id}" data-date="${it._dateKey}" title="移除附件">×</button>
+        <button class="attach-remove" data-id="${it.id}" data-date="${it._dateKey}" title="${t("attachment_remove_title")}">×</button>
       </span>
     `;
   }
@@ -1264,7 +2114,7 @@ window.initApp = function () {
     if (!file || !target) return;
 
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      showToast(`檔案太大了（${(file.size / 1024 / 1024).toFixed(1)}MB），先支援 2MB 以內的檔案`);
+      showToast(t("toast_file_too_large", { mb: (file.size / 1024 / 1024).toFixed(1) }));
       return;
     }
 
@@ -1278,13 +2128,13 @@ window.initApp = function () {
         saveCaptures(captures);
       } catch (err) {
         it.attachment = previous;
-        showToast("儲存失敗，可能是空間不足了，換個更小的檔案試試");
+        showToast(t("toast_save_failed"));
         return;
       }
       renderHero();
       renderItems();
     };
-    reader.onerror = () => showToast("讀取檔案失敗，再試一次看看");
+    reader.onerror = () => showToast(t("toast_read_failed"));
     reader.readAsDataURL(file);
   });
 
@@ -1308,7 +2158,7 @@ window.initApp = function () {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 2000);
     } catch (e) {
-      showToast("打不開這個附件");
+      showToast(t("toast_cant_open_attachment"));
     }
   }
 
@@ -1322,7 +2172,7 @@ window.initApp = function () {
     const hasAttachment = !!(item && item.attachment);
     const currentCategory = (item && item.category) || DEFAULT_CATEGORY;
     const menu = document.getElementById("contextMenu");
-    document.getElementById("ctxAttachBtn").textContent = hasAttachment ? "📎 更換附件" : "📎 新增附件";
+    document.getElementById("ctxAttachBtn").textContent = hasAttachment ? t("ctx_replace_attachment") : t("ctx_add_attachment");
     document.getElementById("ctxRemoveBtn").style.display = hasAttachment ? "block" : "none";
     document.getElementById("ctxNewCatRow").style.display = "none";
     document.getElementById("ctxNewCatInput").value = "";
@@ -1668,12 +2518,12 @@ window.initApp = function () {
     const cat = it.category || DEFAULT_CATEGORY;
     return `
       <li class="hero-todo-item" draggable="true" data-id="${it.id}" data-date="${it._dateKey}" data-category="${escapeHtml(cat)}">
-        <span class="hero-drag-handle" title="拖曳排序">⠿</span>
+        <span class="hero-drag-handle" title="${t("hero_drag_title")}">⠿</span>
         <input type="checkbox" />
         <span class="hero-unfinished-text">${escapeHtml(it.text)}</span>
         ${it._dateKey !== tk ? `<span class="hero-unfinished-date">${escapeHtml(formatDateLine(dateFromKey(it._dateKey)))}</span>` : ""}
         ${attachmentHtml(it)}
-        <button class="hero-todo-del" title="刪除">×</button>
+        <button class="hero-todo-del" title="${t("generic_delete_title")}">×</button>
       </li>
     `;
   }
@@ -1704,7 +2554,7 @@ window.initApp = function () {
 
     return `
       <div class="hero-row">
-        <div class="hero-tag">還沒做完的（${unfinished.length}）</div>
+        <div class="hero-tag">${t("hero_unfinished_tag", { n: unfinished.length })}</div>
         ${groupsMarkup}
       </div>
     `;
@@ -1715,8 +2565,8 @@ window.initApp = function () {
     let resumeHtml;
     if (!history.length) {
       resumeHtml = `
-        <div class="hero-label">從這裡開始</div>
-        <div class="hero-empty">還沒有收尾紀錄。今天結束時按下方「結束今天」，明天這裡就會顯示妳的第一步。</div>
+        <div class="hero-label">${t("hero_start_label")}</div>
+        <div class="hero-empty">${t("hero_empty_text")}</div>
       `;
     } else {
       const last = history[history.length - 1];
@@ -1724,19 +2574,19 @@ window.initApp = function () {
       // disappears instead of lingering as a stale prompt.
       const actionHtml = last.started ? "" : `
         <div class="hero-row">
-          <div class="hero-tag">現在做這件事</div>
-          <div class="hero-action">${escapeHtml(last.nextAction || "（沒有填寫）")}</div>
-          <button class="hero-start-btn" type="button">成功啟動！</button>
+          <div class="hero-tag">${t("hero_doing_tag")}</div>
+          <div class="hero-action">${escapeHtml(last.nextAction || t("empty_placeholder"))}</div>
+          <button class="hero-start-btn" type="button">${t("hero_start_btn")}</button>
         </div>
       `;
       resumeHtml = `
-        <div class="hero-label">從這裡開始</div>
+        <div class="hero-label">${t("hero_start_label")}</div>
         <div class="hero-row">
-          <div class="hero-tag">上次停在</div>
-          <div class="hero-text">${escapeHtml(last.stuck || "（沒有填寫）")}</div>
+          <div class="hero-tag">${t("hero_last_stuck_tag")}</div>
+          <div class="hero-text">${escapeHtml(last.stuck || t("empty_placeholder"))}</div>
         </div>
         ${actionHtml}
-        <div class="hero-meta">記錄於 ${escapeHtml(last.date)}</div>
+        <div class="hero-meta">${t("hero_recorded_at", { date: escapeHtml(last.date) })}</div>
       `;
     }
     hero.innerHTML = resumeHtml + unfinishedHtml();
@@ -1748,11 +2598,11 @@ window.initApp = function () {
     const cat = it.category || DEFAULT_CATEGORY;
     return `
       <li class="item ${it.done ? "done" : ""}" draggable="true" data-id="${it.id}" data-date="${dateKey}" data-category="${escapeHtml(cat)}">
-        <span class="item-drag-handle" title="拖曳到別的分類">⠿</span>
+        <span class="item-drag-handle" title="${t("item_drag_title")}">⠿</span>
         <input type="checkbox" ${it.done ? "checked" : ""} />
         <div class="item-text" data-id="${it.id}">${escapeHtml(it.text)}</div>
         ${attachmentHtml(Object.assign({ _dateKey: dateKey }, it))}
-        <button class="item-del" title="刪除">×</button>
+        <button class="item-del" title="${t("generic_delete_title")}">×</button>
       </li>
     `;
   }
@@ -1791,11 +2641,11 @@ window.initApp = function () {
     const todayItems = (captures[tk] || []).map(it => Object.assign({ _dateKey: tk }, it));
     const todaySectionInner = todayItems.length
       ? groupsHtml(todayItems)
-      : `<div class="empty-note">今天還沒有記錄</div>`;
+      : `<div class="empty-note">${t("today_no_records")}</div>`;
 
     let html = `
       <div class="date-section" data-date="${tk}">
-        <div class="date-section-label">今天・${escapeHtml(formatDateLine())}</div>
+        <div class="date-section-label">${t("today_date_label", { date: escapeHtml(formatDateLine()) })}</div>
         ${todaySectionInner}
       </div>
     `;
@@ -2191,15 +3041,15 @@ window.initApp = function () {
   function renderHistory() {
     const el = document.getElementById("historyList");
     if (!history.length) {
-      el.innerHTML = `<div class="empty-note">還沒有紀錄</div>`;
+      el.innerHTML = `<div class="empty-note">${t("history_empty")}</div>`;
       return;
     }
     const rev = [...history].reverse();
     el.innerHTML = rev.map(h => `
       <div class="history-entry">
         <div class="history-date">${escapeHtml(h.date)}</div>
-        <div class="history-stuck">停在：${escapeHtml(h.stuck || "—")}</div>
-        <div class="history-action">下一步：${escapeHtml(h.nextAction || "—")}</div>
+        <div class="history-stuck">${t("history_stuck_label", { x: escapeHtml(h.stuck || "—") })}</div>
+        <div class="history-action">${t("history_next_label", { x: escapeHtml(h.nextAction || "—") })}</div>
       </div>
     `).join("");
   }
@@ -2217,19 +3067,19 @@ window.initApp = function () {
     document.getElementById("routineAddRow").style.display = routines.length < MAX_ROUTINES ? "flex" : "none";
 
     if (!routines.length) {
-      listEl.innerHTML = `<div class="routine-empty">還沒有例行事項，加一個每天想做的小事吧，例如「喝水」「運動 10 分鐘」。</div>`;
+      listEl.innerHTML = `<div class="routine-empty">${t("routine_empty_text")}</div>`;
       progressEl.textContent = "";
       return;
     }
 
     const doneCount = routines.filter(r => todayLog[r.id]).length;
-    progressEl.textContent = `今天 ${doneCount} / ${routines.length} 完成`;
+    progressEl.textContent = t("routine_progress_text", { done: doneCount, total: routines.length });
 
     listEl.innerHTML = routines.map(r => `
       <li class="routine-item ${todayLog[r.id] ? "done" : ""}" data-id="${r.id}">
         <input type="checkbox" ${todayLog[r.id] ? "checked" : ""} />
         <span class="routine-text">${escapeHtml(r.text)}</span>
-        <button class="routine-del" title="刪除這個例行事項">×</button>
+        <button class="routine-del" title="${t("routine_delete_title")}">×</button>
       </li>
     `).join("");
   }
@@ -2260,7 +3110,7 @@ window.initApp = function () {
   function addRoutine(text) {
     if (!text.trim()) return;
     if (routines.length >= MAX_ROUTINES) {
-      showToast(`每天最多只記錄 ${MAX_ROUTINES} 件例行事項，先刪一個舊的再加新的`);
+      showToast(t("toast_routine_limit", { n: MAX_ROUTINES }));
       return;
     }
     routines.push({ id: uid(), text: text.trim(), createdAt: Date.now() });
@@ -2313,8 +3163,8 @@ window.initApp = function () {
     btn.classList.add("has-file");
     el.style.display = "flex";
     el.innerHTML = `
-      <span>📎 ${escapeHtml(truncateName(pendingNewAttachment.name, 26))}，加入時會一起附上</span>
-      <button id="clearNewAttachBtn" type="button" title="取消附加">×</button>
+      <span>${t("capture_pending_attachment", { name: escapeHtml(truncateName(pendingNewAttachment.name, 26)) })}</span>
+      <button id="clearNewAttachBtn" type="button" title="${t("capture_cancel_attach_title")}">×</button>
     `;
     document.getElementById("clearNewAttachBtn").addEventListener("click", () => {
       pendingNewAttachment = null;
@@ -2332,7 +3182,7 @@ window.initApp = function () {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      showToast(`檔案太大了（${(file.size / 1024 / 1024).toFixed(1)}MB），先支援 2MB 以內的檔案`);
+      showToast(t("toast_file_too_large", { mb: (file.size / 1024 / 1024).toFixed(1) }));
       return;
     }
     const reader = new FileReader();
@@ -2340,7 +3190,7 @@ window.initApp = function () {
       pendingNewAttachment = { name: file.name, type: file.type, size: file.size, dataUrl: reader.result };
       renderNewAttachPreview();
     };
-    reader.onerror = () => showToast("讀取檔案失敗，再試一次看看");
+    reader.onerror = () => showToast(t("toast_read_failed"));
     reader.readAsDataURL(file);
   });
 
@@ -2363,7 +3213,7 @@ window.initApp = function () {
       saveCaptures(captures);
     } catch (err) {
       captures[targetKey].pop();
-      showToast("儲存失敗，可能是空間不足了，附件換個更小的檔案試試");
+      showToast(t("toast_save_failed_attachment"));
       return;
     }
     if (pendingNewAttachment) {
@@ -2470,7 +3320,7 @@ window.initApp = function () {
     // fires off real signal (a number actually found last week) — no data,
     // no suggestion.
     const lastWeekKey = dateKeyWithOffset(-7);
-    const lastWeekLabel = "上" + weekday[todayWeekday];
+    const lastWeekLabel = lastWeekdayLabel(todayWeekday);
     (captures[lastWeekKey] || [])
       .map(it => {
         const m = (it.text || "").match(/(\d+)(?!.*\d)/);
@@ -2486,7 +3336,7 @@ window.initApp = function () {
           it.category,
           null,
           true,
-          `${lastWeekLabel}妳做了「${it.text}」，今天想接著做「${nextText}」嗎？`
+          recoSequenceSentence(lastWeekLabel, it.text, nextText)
         );
       });
 
@@ -2515,7 +3365,7 @@ window.initApp = function () {
       .filter(f => f.count >= 2)
       .sort((a, b) => b.count - a.count || b.lastTs - a.lastTs)
       .slice(0, 3)
-      .forEach(f => addResult(f.text, f.lastCategory, `${weekday[todayWeekday]}常做`, true));
+      .forEach(f => addResult(f.text, f.lastCategory, recoWeekdayPattern(weekday[todayWeekday]), true));
 
     // 3) A routine item that tends to get skipped specifically on this weekday —
     // informational nudge only (it's already pinned in the routine panel, so no add button).
@@ -2532,7 +3382,7 @@ window.initApp = function () {
         cursor.setDate(cursor.getDate() + 7);
       }
       if (total >= 2 && done / total < 0.34) {
-        addResult(`🔁 ${r.text}`, null, `${weekday[todayWeekday]}常忘記做`, false);
+        addResult(`🔁 ${r.text}`, null, recoRoutineSkip(weekday[todayWeekday]), false);
       }
     });
 
@@ -2544,9 +3394,9 @@ window.initApp = function () {
     const { items, candidateCount } = computeRecommendations();
     const chipsEl = document.getElementById("recoChips");
     if (candidateCount === 0) {
-      chipsEl.innerHTML = `<div class="reco-empty">預測不到，請再做多一點任務來幫助我學習你的工作習慣吧</div>`;
+      chipsEl.innerHTML = `<div class="reco-empty">${t("reco_empty_no_data")}</div>`;
     } else if (!items.length) {
-      chipsEl.innerHTML = `<div class="reco-empty">沒有更多預測啦</div>`;
+      chipsEl.innerHTML = `<div class="reco-empty">${t("reco_empty_all_added")}</div>`;
     } else {
       chipsEl.innerHTML = items.map((it, i) => `
         <span class="reco-chip" data-idx="${i}">
@@ -2554,7 +3404,7 @@ window.initApp = function () {
             ? `<span>${escapeHtml(it.sentence)}</span>`
             : `<span>${escapeHtml(it.text)}</span><span class="reco-chip-reason">・${escapeHtml(it.reason)}</span>`
           }
-          ${it.addable ? `<button type="button" class="reco-chip-add" title="加入今天">+</button>` : ""}
+          ${it.addable ? `<button type="button" class="reco-chip-add" title="${t("reco_add_title")}">+</button>` : ""}
         </span>
       `).join("");
     }
@@ -2583,15 +3433,32 @@ window.initApp = function () {
   // bucket things land in.
   function greetingPrefix() {
     const h = new Date().getHours();
-    if (h >= 5 && h < 11) return "早安";
-    if (h >= 11 && h < 13) return "午安";
-    if (h >= 13 && h < 18) return "下午好";
-    if (h >= 18 && h < 23) return "晚上好";
-    return "夜深了";
+    if (h >= 5 && h < 11) return t("greeting_morning");
+    if (h >= 11 && h < 13) return t("greeting_noon");
+    if (h >= 13 && h < 18) return t("greeting_afternoon");
+    if (h >= 18 && h < 23) return t("greeting_evening");
+    return t("greeting_late");
   }
 
+  function renderAllDynamic() {
+    applyStaticI18n();
+    document.getElementById("dateLine").textContent = formatDateLine();
+    document.getElementById("greeting").textContent = t("greeting_template", { prefix: greetingPrefix() });
+    renderHero();
+    renderItems();
+    renderHistory();
+    renderRoutines();
+    renderReco();
+  }
+  // Lets setLang() (defined at the top of this script, before initApp) pick
+  // up every render function once they actually exist — before login, only
+  // applyStaticI18n() runs (covers the auth screen); after login, switching
+  // language also redraws all the dynamically-built content below.
+  window.__i18nRerender = renderAllDynamic;
+
   document.getElementById("dateLine").textContent = formatDateLine();
-  document.getElementById("greeting").textContent = `${greetingPrefix()}，這是你的今日工作台`;
+  document.getElementById("greeting").textContent = t("greeting_template", { prefix: greetingPrefix() });
+  applyStaticI18n();
   renderHero();
   renderItems();
   renderHistory();
@@ -2817,22 +3684,21 @@ if (typeof window.cowork !== "undefined") {
     else { e.style.display = "none"; }
   }
 
-  const RESEND_LABEL = "重寄驗證信";
   const resendCooldowns = new WeakMap(); // per-button cooldown timer, so the modal's and the banner's resend buttons don't fight over one shared timer
 
   function startResendCooldown(btn, seconds) {
     let remaining = seconds;
     btn.disabled = true;
-    btn.textContent = `${RESEND_LABEL}（${remaining}s）`;
+    btn.textContent = `${window.t("btn_resend_verification")}（${remaining}s）`;
     clearInterval(resendCooldowns.get(btn));
     const timer = setInterval(() => {
       remaining -= 1;
       if (remaining <= 0) {
         clearInterval(resendCooldowns.get(btn));
         btn.disabled = false;
-        btn.textContent = RESEND_LABEL;
+        btn.textContent = window.t("btn_resend_verification");
       } else {
-        btn.textContent = `${RESEND_LABEL}（${remaining}s）`;
+        btn.textContent = `${window.t("btn_resend_verification")}（${remaining}s）`;
       }
     }, 1000);
     resendCooldowns.set(btn, timer);
@@ -2856,13 +3722,12 @@ if (typeof window.cowork !== "undefined") {
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
     document.getElementById("routineFab").style.display = "none";
-    document.getElementById("verifySub").textContent =
-      `我們寄了一封驗證信到 ${user.email}，點裡面的連結後回來這裡按「我已驗證」。第一次的信有時候會延遲或收不到，如果等了幾分鐘還是沒看到（記得連垃圾郵件夾一起找），直接按下面的「重寄驗證信」通常第二次就會收到。`;
+    document.getElementById("verifySub").textContent = window.t("verify_email_sent_text", { email: user.email });
     document.getElementById("verifyError").style.display = "none";
     const btn = document.getElementById("resendVerifyBtn");
     clearInterval(resendCooldowns.get(btn));
     btn.disabled = false;
-    btn.textContent = RESEND_LABEL;
+    btn.textContent = window.t("btn_resend_verification");
   }
 
   let currentEmail = "";
@@ -2988,7 +3853,7 @@ if (typeof window.cowork !== "undefined") {
       location.reload();
     }, (err) => {
       console.error(err);
-      showLogin("同步時發生問題，檢查一下網路後重新整理試試");
+      showLogin(window.t("error_sync_problem"));
     });
   }
 
@@ -3009,23 +3874,25 @@ if (typeof window.cowork !== "undefined") {
 
   function friendlyAuthError(code) {
     const map = {
-      "auth/invalid-email": "Email 格式不對，檢查一下",
-      "auth/user-not-found": "找不到這個帳號，要不要改成「註冊新帳號」？",
-      "auth/wrong-password": "密碼不對，再試一次",
-      "auth/invalid-credential": "帳號或密碼不對，再確認一次",
-      "auth/email-already-in-use": "這個 Email 已經註冊過了，改成「登入」試試",
-      "auth/weak-password": "密碼至少要 6 個字元",
-      "auth/too-many-requests": "嘗試太多次了，稍等一下再試"
+      "auth/invalid-email": window.t("auth_error_invalid_email"),
+      "auth/user-not-found": window.t("auth_error_user_not_found"),
+      "auth/wrong-password": window.t("auth_error_wrong_password"),
+      "auth/invalid-credential": window.t("auth_error_invalid_credential"),
+      "auth/email-already-in-use": window.t("auth_error_email_in_use"),
+      "auth/weak-password": window.t("auth_error_weak_password"),
+      "auth/too-many-requests": window.t("auth_error_too_many_requests")
     };
-    return map[code] || ("發生錯誤：" + code);
+    return map[code] || window.t("auth_error_generic", { code: code });
   }
 
   let authMode = "login";
+  document.body.dataset.authMode = authMode;
   document.getElementById("authToggleBtn").addEventListener("click", () => {
     authMode = authMode === "login" ? "signup" : "login";
-    document.getElementById("authTitle").textContent = authMode === "login" ? "登入" : "註冊新帳號";
-    document.getElementById("authSubmitBtn").textContent = authMode === "login" ? "登入" : "註冊";
-    document.getElementById("authToggleBtn").textContent = authMode === "login" ? "改成註冊新帳號" : "改成登入";
+    document.body.dataset.authMode = authMode;
+    document.getElementById("authTitle").textContent = authMode === "login" ? window.t("auth_login_title") : window.t("auth_signup_title");
+    document.getElementById("authSubmitBtn").textContent = authMode === "login" ? window.t("auth_login_title") : window.t("auth_signup_btn");
+    document.getElementById("authToggleBtn").textContent = authMode === "login" ? window.t("auth_toggle_to_signup") : window.t("auth_toggle_to_login");
     document.getElementById("authError").style.display = "none";
   });
 
@@ -3035,7 +3902,7 @@ if (typeof window.cowork !== "undefined") {
     const errEl = document.getElementById("authError");
     errEl.style.display = "none";
     if (!email || !password) {
-      errEl.textContent = "請輸入 Email 和密碼";
+      errEl.textContent = window.t("error_email_password_required");
       errEl.style.display = "block";
       return;
     }
@@ -3076,7 +3943,7 @@ if (typeof window.cowork !== "undefined") {
     const errEl = document.getElementById("resetError");
     errEl.style.display = "none";
     if (!email) {
-      errEl.textContent = "請輸入 Email";
+      errEl.textContent = window.t("error_email_required");
       errEl.style.display = "block";
       return;
     }
@@ -3085,7 +3952,7 @@ if (typeof window.cowork !== "undefined") {
     try {
       await sendPasswordResetEmail(auth, email);
       errEl.style.color = "#6B6A63";
-      errEl.textContent = "已寄出重設密碼信，記得看一下垃圾郵件夾";
+      errEl.textContent = window.t("reset_email_sent");
       errEl.style.display = "block";
     } catch (err) {
       errEl.style.color = "#C6613F";
@@ -3158,7 +4025,7 @@ if (typeof window.cowork !== "undefined") {
     const errEl = document.getElementById("deleteAccountError");
     errEl.style.display = "none";
     if (!password) {
-      errEl.textContent = "請輸入密碼";
+      errEl.textContent = window.t("error_password_required");
       errEl.style.display = "block";
       return;
     }
@@ -3189,7 +4056,7 @@ if (typeof window.cowork !== "undefined") {
     const listEl = document.getElementById("knownAccountsList");
     const accounts = loadKnownAccounts();
     if (!accounts.length) {
-      listEl.innerHTML = `<div class="empty-note">這台設備上還沒有登入紀錄</div>`;
+      listEl.innerHTML = `<div class="empty-note">${window.t("switch_empty")}</div>`;
       return;
     }
     listEl.innerHTML = accounts.map(a => {
@@ -3202,7 +4069,7 @@ if (typeof window.cowork !== "undefined") {
         <div class="account-row" data-uid="${escapeHtmlSimple(a.uid)}" data-email="${escapeHtmlSimple(a.email)}">
           <span class="profile-avatar account-row-avatar">${avatarInner}</span>
           <span class="account-row-label">${escapeHtmlSimple(label)}</span>
-          <button type="button" class="account-row-remove" data-uid="${escapeHtmlSimple(a.uid)}" title="從清單移除（不會刪除帳號）">×</button>
+          <button type="button" class="account-row-remove" data-uid="${escapeHtmlSimple(a.uid)}" title="${window.t("switch_remove_title")}">×</button>
         </div>
       `;
     }).join("");
@@ -3340,13 +4207,13 @@ if (typeof window.cowork !== "undefined") {
         pendingImportData = null;
         document.getElementById("syncImportConfirm").style.display = "none";
         msgEl.style.color = "#C6613F";
-        msgEl.textContent = "這個檔案看起來不是有效的備份檔";
+        msgEl.textContent = window.t("sync_invalid_file");
         msgEl.style.display = "block";
       }
     };
     reader.onerror = () => {
       msgEl.style.color = "#C6613F";
-      msgEl.textContent = "讀取檔案失敗，再試一次";
+      msgEl.textContent = window.t("sync_read_fail");
       msgEl.style.display = "block";
     };
     reader.readAsText(file);
@@ -3402,7 +4269,7 @@ if (typeof window.cowork !== "undefined") {
       if (user.emailVerified) {
         startSync(user);
       } else {
-        errEl.textContent = "還沒偵測到驗證，確認信箱點過連結後再試一次";
+        errEl.textContent = window.t("verify_not_detected");
         errEl.style.display = "block";
       }
     } finally {
@@ -3419,12 +4286,12 @@ if (typeof window.cowork !== "undefined") {
     try {
       await sendEmailVerification(user);
       errEl.style.color = "#6B6A63";
-      errEl.textContent = "已經重新寄出，記得看一下垃圾郵件夾";
+      errEl.textContent = window.t("verify_resent");
       errEl.style.display = "block";
       startResendCooldown(btn, 40); // matches Firebase's own short-lived rate limit on repeated sends
     } catch (err) {
       errEl.style.color = "#C6613F";
-      errEl.textContent = err.code === "auth/too-many-requests" ? "寄太多次了，稍等一下再試" : "寄送失敗，稍等一下再試";
+      errEl.textContent = err.code === "auth/too-many-requests" ? window.t("verify_too_many") : window.t("verify_send_failed");
       errEl.style.display = "block";
       btn.disabled = false;
     }
@@ -3439,11 +4306,11 @@ if (typeof window.cowork !== "undefined") {
     try {
       await sendEmailVerification(user);
       msgEl.style.color = "#6B6A63";
-      msgEl.textContent = "已重新寄出，記得看垃圾郵件夾";
+      msgEl.textContent = window.t("verify_resent_banner");
       startResendCooldown(btn, 40);
     } catch (err) {
       msgEl.style.color = "#C6613F";
-      msgEl.textContent = err.code === "auth/too-many-requests" ? "寄太多次了，稍等再試" : "寄送失敗";
+      msgEl.textContent = err.code === "auth/too-many-requests" ? window.t("verify_too_many_banner") : window.t("verify_send_failed_banner");
       btn.disabled = false;
     }
   });
