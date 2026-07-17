@@ -604,7 +604,7 @@
     border-radius: 12px;
     box-shadow: 0 8px 24px rgba(46,44,39,0.18);
     padding: 16px;
-    width: 220px;
+    width: 240px;
   }
   .profile-dropdown.open { display: block; }
   .profile-dropdown-avatar {
@@ -621,6 +621,39 @@
     margin-bottom: 10px;
   }
   #profileLogoutBtn { color: #C6613F; text-align: center; font-weight: 600; }
+
+  /* Soft, dismissible reminder — not a gate — for an unverified email */
+  #verifyReminder {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: #FFF6F1;
+    border: 1px solid #F0D9C8;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #6B6A63;
+    margin-bottom: 16px;
+    max-width: 640px;
+  }
+  .verify-reminder-btn {
+    background: #fff;
+    border: 1px solid #DEDCD2;
+    color: #2E2C27;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .verify-reminder-btn:hover { border-color: #C6613F; color: #C6613F; }
+  #reminderResendMsg { font-size: 12px; color: #ABA998; }
+  #reminderDismissBtn {
+    background: none; border: none; color: #ABA998; cursor: pointer;
+    font-size: 16px; line-height: 1; margin-left: auto; padding: 0 2px; flex-shrink: 0;
+  }
+  #reminderDismissBtn:hover { color: #C6613F; }
 </style>
 </head>
 <body>
@@ -634,9 +667,12 @@
         <label>Email</label>
         <input type="text" id="authEmail" placeholder="you@example.com" autocomplete="username" />
       </div>
-      <div class="field" style="margin-bottom:8px;">
+      <div class="field" style="margin-bottom:6px;">
         <label>密碼</label>
         <input type="password" id="authPassword" placeholder="至少 6 個字元" autocomplete="current-password" />
+      </div>
+      <div style="text-align:right; margin-bottom:12px;">
+        <button type="button" id="forgotPasswordBtn" style="background:none;border:none;color:#8A8878;font-size:12px;cursor:pointer;padding:0;text-decoration:underline;">忘記密碼？</button>
       </div>
       <div class="auth-error" id="authError"></div>
       <div class="modal-actions" style="justify-content:space-between; align-items:center;">
@@ -654,6 +690,19 @@
           <button class="btn-secondary" id="resendVerifyBtn" type="button">重寄驗證信</button>
           <button class="btn-primary" id="checkVerifyBtn" type="button">我已驗證</button>
         </div>
+      </div>
+    </div>
+    <div id="authResetView" style="display:none;">
+      <h3>找回密碼</h3>
+      <div class="sub">輸入註冊時用的、且已驗證過的 Email，我們會寄一封重設密碼的信給你。</div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="resetEmail" placeholder="you@example.com" autocomplete="username" />
+      </div>
+      <div class="auth-error" id="resetError"></div>
+      <div class="modal-actions" style="justify-content:space-between; align-items:center;">
+        <button class="btn-secondary" id="resetBackBtn" type="button">返回登入</button>
+        <button class="btn-primary" id="resetSubmitBtn" type="button">寄送重設信</button>
       </div>
     </div>
   </div>
@@ -680,12 +729,30 @@
       <input type="text" id="displayNameInput" placeholder="妳的名字" />
     </div>
     <div class="profile-email" id="profileEmailLabel"></div>
-    <div class="context-menu-divider" style="margin:0 0 8px;"></div>
+    <div class="context-menu-divider" style="margin:0 0 6px;"></div>
+    <button type="button" class="context-menu-item" id="exportBackupBtn">📤 匯出備份</button>
+    <button type="button" class="context-menu-item" id="importBackupBtn">📥 匯入備份</button>
+    <input type="file" id="importBackupFileInput" accept="application/json,.json" style="display:none;" />
+    <div id="importConfirmRow" style="display:none; padding:2px 10px 6px;">
+      <div style="font-size:12px; color:#C6613F; margin-bottom:6px;">這會覆蓋目前所有資料，確定嗎？</div>
+      <div style="display:flex; gap:6px;">
+        <button type="button" class="btn-secondary" id="importCancelBtn" style="font-size:12px; padding:5px 10px;">取消</button>
+        <button type="button" class="btn-primary" id="importConfirmBtn" style="font-size:12px; padding:5px 10px;">確認匯入</button>
+      </div>
+    </div>
+    <div id="importBackupMsg" style="font-size:12px; color:#ABA998; padding:0 10px 4px; display:none;"></div>
+    <div class="context-menu-divider" style="margin:2px 0 8px;"></div>
     <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
   </div>
 </div>
 
 <div class="wrap" style="display:none;">
+  <div id="verifyReminder">
+    <span>還沒有驗證 Email，記得去信箱點一下驗證連結。</span>
+    <button type="button" id="reminderResendBtn" class="verify-reminder-btn">重寄驗證信</button>
+    <span id="reminderResendMsg"></span>
+    <button type="button" id="reminderDismissBtn" title="關閉提醒">×</button>
+  </div>
   <div class="date-line" id="dateLine"></div>
   <h1>今日啟動台</h1>
   <div class="greeting" id="greeting"></div>
@@ -2131,7 +2198,7 @@ if (typeof window.cowork !== "undefined") {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-    createUserWithEmailAndPassword, signOut, sendEmailVerification
+    createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, doc, onSnapshot, setDoc, serverTimestamp
@@ -2212,43 +2279,67 @@ if (typeof window.cowork !== "undefined") {
   // GitHub-hosted page only, so it's skipped entirely here.
   const inCowork = typeof window.cowork !== "undefined";
 
+  function showLoginView() {
+    document.getElementById("authResetView").style.display = "none";
+    document.getElementById("authVerifyView").style.display = "none";
+    document.getElementById("authLoginView").style.display = "block";
+  }
+
+  function showResetView() {
+    document.getElementById("authLoginView").style.display = "none";
+    document.getElementById("authVerifyView").style.display = "none";
+    document.getElementById("authResetView").style.display = "block";
+    document.getElementById("resetEmail").value = document.getElementById("authEmail").value.trim();
+    document.getElementById("resetError").style.display = "none";
+  }
+
   function showLogin(msg) {
     if (inCowork) return;
     document.getElementById("authOverlay").classList.add("open");
-    document.getElementById("authLoginView").style.display = "block";
-    document.getElementById("authVerifyView").style.display = "none";
+    showLoginView();
     document.getElementById("authBar").style.display = "none";
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
+    document.getElementById("verifyReminder").style.display = "none";
     const e = document.getElementById("authError");
     if (msg) { e.textContent = msg; e.style.display = "block"; }
     else { e.style.display = "none"; }
   }
 
-  let resendCooldownTimer = null;
   const RESEND_LABEL = "重寄驗證信";
+  const resendCooldowns = new WeakMap(); // per-button cooldown timer, so the modal's and the banner's resend buttons don't fight over one shared timer
 
-  function startResendCooldown(seconds) {
-    const btn = document.getElementById("resendVerifyBtn");
+  function startResendCooldown(btn, seconds) {
     let remaining = seconds;
     btn.disabled = true;
     btn.textContent = `${RESEND_LABEL}（${remaining}s）`;
-    clearInterval(resendCooldownTimer);
-    resendCooldownTimer = setInterval(() => {
+    clearInterval(resendCooldowns.get(btn));
+    const timer = setInterval(() => {
       remaining -= 1;
       if (remaining <= 0) {
-        clearInterval(resendCooldownTimer);
+        clearInterval(resendCooldowns.get(btn));
         btn.disabled = false;
         btn.textContent = RESEND_LABEL;
       } else {
         btn.textContent = `${RESEND_LABEL}（${remaining}s）`;
       }
     }, 1000);
+    resendCooldowns.set(btn, timer);
+  }
+
+  // Verification is a soft nudge, not a hard gate (Firebase's free shared
+  // sending domain is unreliable enough that blocking real use on it caused
+  // more harm than the reminder is worth) — this banner just stays visible
+  // in the app until the account shows as verified on a later reload.
+  function updateVerifyReminder(user) {
+    const el = document.getElementById("verifyReminder");
+    el.style.display = (user && !user.emailVerified) ? "flex" : "none";
   }
 
   function showVerify(user) {
     document.getElementById("authOverlay").classList.add("open");
     document.getElementById("authLoginView").style.display = "none";
+    document.getElementById("authResetView").style.display = "none";
     document.getElementById("authVerifyView").style.display = "block";
     document.getElementById("authBar").style.display = "none";
     document.querySelector(".wrap").style.display = "none";
@@ -2256,8 +2347,8 @@ if (typeof window.cowork !== "undefined") {
     document.getElementById("verifySub").textContent =
       `我們寄了一封驗證信到 ${user.email}，點裡面的連結後回來這裡按「我已驗證」。第一次的信有時候會延遲或收不到，如果等了幾分鐘還是沒看到（記得連垃圾郵件夾一起找），直接按下面的「重寄驗證信」通常第二次就會收到。`;
     document.getElementById("verifyError").style.display = "none";
-    clearInterval(resendCooldownTimer);
     const btn = document.getElementById("resendVerifyBtn");
+    clearInterval(resendCooldowns.get(btn));
     btn.disabled = false;
     btn.textContent = RESEND_LABEL;
   }
@@ -2358,6 +2449,7 @@ if (typeof window.cowork !== "undefined") {
         firstSnapshot = false;
         writeAllLocal(data);
         revealApp(user.email);
+        updateVerifyReminder(user);
         window.initApp();
         return;
       }
@@ -2380,11 +2472,9 @@ if (typeof window.cowork !== "undefined") {
         showLogin();
         return;
       }
-      // Real signups must verify their email before the app (and cloud sync) unlocks.
-      if (!user.emailVerified) {
-        showVerify(user);
-        return;
-      }
+      // Verification is a reminder, not a gate — Firebase's free shared
+      // sending domain is unreliable enough that blocking real use on it
+      // caused more harm than good, so unverified accounts still get in.
       startSync(user);
     });
   }
@@ -2445,6 +2535,43 @@ if (typeof window.cowork !== "undefined") {
     if (e.key === "Enter") document.getElementById("authPassword").focus();
   });
 
+  // Forgot password — this is the actual point of requiring a verified email:
+  // it's the account-recovery path when the password itself is forgotten.
+  document.getElementById("forgotPasswordBtn").addEventListener("click", () => {
+    showResetView();
+  });
+  document.getElementById("resetBackBtn").addEventListener("click", () => {
+    showLoginView();
+  });
+  async function submitReset() {
+    const email = document.getElementById("resetEmail").value.trim();
+    const errEl = document.getElementById("resetError");
+    errEl.style.display = "none";
+    if (!email) {
+      errEl.textContent = "請輸入 Email";
+      errEl.style.display = "block";
+      return;
+    }
+    const btn = document.getElementById("resetSubmitBtn");
+    btn.disabled = true;
+    try {
+      await sendPasswordResetEmail(auth, email);
+      errEl.style.color = "#6B6A63";
+      errEl.textContent = "已寄出重設密碼信，記得看一下垃圾郵件夾";
+      errEl.style.display = "block";
+    } catch (err) {
+      errEl.style.color = "#C6613F";
+      errEl.textContent = friendlyAuthError(err.code);
+      errEl.style.display = "block";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  document.getElementById("resetSubmitBtn").addEventListener("click", submitReset);
+  document.getElementById("resetEmail").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitReset();
+  });
+
   document.getElementById("profileLogoutBtn").addEventListener("click", () => {
     signOut(auth).then(() => location.reload());
   });
@@ -2478,6 +2605,74 @@ if (typeof window.cowork !== "undefined") {
       p.avatar = dataUrl;
       saveProfile(p);
     }).catch(() => {});
+  });
+
+  // Backup / restore — a portable JSON snapshot of every localStorage key this
+  // app uses. This is also the manual way to move data between two accounts:
+  // export from one, sign into the other, import the file.
+  function downloadJson(obj, filename) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  document.getElementById("exportBackupBtn").addEventListener("click", () => {
+    const data = readAllLocal();
+    data.exportedAt = new Date().toISOString();
+    data.app = "daily-launchpad-backup";
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadJson(data, `daily-launchpad-backup-${stamp}.json`);
+  });
+
+  let pendingImportData = null;
+
+  document.getElementById("importBackupBtn").addEventListener("click", () => {
+    document.getElementById("importBackupFileInput").value = "";
+    document.getElementById("importBackupFileInput").click();
+  });
+
+  document.getElementById("importBackupFileInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    const msgEl = document.getElementById("importBackupMsg");
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || typeof parsed !== "object") throw new Error("bad format");
+        pendingImportData = parsed;
+        msgEl.style.display = "none";
+        document.getElementById("importConfirmRow").style.display = "block";
+      } catch (err) {
+        msgEl.style.color = "#C6613F";
+        msgEl.textContent = "這個檔案看起來不是有效的備份檔";
+        msgEl.style.display = "block";
+      }
+    };
+    reader.onerror = () => {
+      msgEl.style.color = "#C6613F";
+      msgEl.textContent = "讀取檔案失敗，再試一次";
+      msgEl.style.display = "block";
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById("importCancelBtn").addEventListener("click", () => {
+    pendingImportData = null;
+    document.getElementById("importConfirmRow").style.display = "none";
+  });
+
+  document.getElementById("importConfirmBtn").addEventListener("click", () => {
+    if (!pendingImportData) return;
+    writeAllLocal(pendingImportData);
+    if (currentUid) scheduleCloudPush(); // carries the imported data over to this account's cloud doc too
+    location.reload();
   });
 
   document.getElementById("verifyLogoutBtn").addEventListener("click", () => {
@@ -2514,13 +2709,35 @@ if (typeof window.cowork !== "undefined") {
       errEl.style.color = "#6B6A63";
       errEl.textContent = "已經重新寄出，記得看一下垃圾郵件夾";
       errEl.style.display = "block";
-      startResendCooldown(40); // matches Firebase's own short-lived rate limit on repeated sends
+      startResendCooldown(btn, 40); // matches Firebase's own short-lived rate limit on repeated sends
     } catch (err) {
       errEl.style.color = "#C6613F";
       errEl.textContent = err.code === "auth/too-many-requests" ? "寄太多次了，稍等一下再試" : "寄送失敗，稍等一下再試";
       errEl.style.display = "block";
       btn.disabled = false;
     }
+  });
+
+  document.getElementById("reminderResendBtn").addEventListener("click", async () => {
+    const user = auth.currentUser;
+    const msgEl = document.getElementById("reminderResendMsg");
+    if (!user) return;
+    const btn = document.getElementById("reminderResendBtn");
+    btn.disabled = true;
+    try {
+      await sendEmailVerification(user);
+      msgEl.style.color = "#6B6A63";
+      msgEl.textContent = "已重新寄出，記得看垃圾郵件夾";
+      startResendCooldown(btn, 40);
+    } catch (err) {
+      msgEl.style.color = "#C6613F";
+      msgEl.textContent = err.code === "auth/too-many-requests" ? "寄太多次了，稍等再試" : "寄送失敗";
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("reminderDismissBtn").addEventListener("click", () => {
+    document.getElementById("verifyReminder").style.display = "none";
   });
 </script>
 </body>
