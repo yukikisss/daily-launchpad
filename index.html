@@ -20,12 +20,55 @@
   h1 { font-size: 22px; margin: 0 0 6px; font-weight: 700; }
   .greeting { color: #6B6A63; font-size: 14px; margin: 0 0 20px; }
 
+  .reco-panel {
+    background: #FBF7ED;
+    border: 1px solid #EDE3C6;
+    border-left: 3px solid #C6613F;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .reco-panel-head { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
+  .reco-panel-title { font-size: 13px; font-weight: 700; color: #2E2C27; }
+  .reco-panel-sub { font-size: 11px; color: #ABA998; margin-top: 2px; }
+  .reco-chips { display: flex; flex-direction: column; gap: 8px; }
+  .reco-empty { font-size: 12px; color: #ABA998; padding: 4px 2px; }
+  .reco-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #FFFFFF;
+    border: 1px solid #EFEEE7;
+    border-radius: 10px;
+    padding: 7px 8px 7px 12px;
+    font-size: 12.5px;
+    color: #2E2C27;
+  }
+  .reco-chip > span:first-child { flex: 1; min-width: 0; }
+  .reco-chip-reason { color: #ABA998; font-size: 11px; flex-shrink: 0; }
+  .reco-chip-add {
+    background: #C6613F;
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    line-height: 18px;
+    text-align: center;
+    font-size: 14px;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .reco-chip-add:hover { background: #AE5133; }
+
   /* Top area: main column (date/title/hero) + routine panel side by side */
   .top-row { display: flex; gap: 20px; align-items: flex-start; }
   /* Fixed at 640px (not flex:1) so the hero card lines up exactly with the
      "隨手記錄" capture card and journal below it, instead of shrinking to
      whatever space is left next to the routine panel. */
   .top-main { flex: 0 0 640px; width: 640px; max-width: 640px; min-width: 0; }
+  .routine-col { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
   .routine-panel {
     width: 260px;
     flex-shrink: 0;
@@ -83,6 +126,7 @@
   @media (max-width: 760px) {
     .top-row { flex-direction: column; }
     .top-main { flex-basis: auto; width: 100%; max-width: 100%; }
+    .routine-col { width: 100%; }
     .routine-panel { width: 100%; }
   }
 
@@ -898,14 +942,26 @@
       <div class="hero" id="heroCard"></div>
     </div>
 
-    <div class="routine-panel">
-      <h2 class="routine-heading">每日例行</h2>
-      <div class="routine-hint">只紀錄最近日常最重要的三件事</div>
-      <div class="routine-progress" id="routineProgress"></div>
-      <ul class="routine-list" id="routineList"></ul>
-      <div class="routine-add-row" id="routineAddRow">
-        <input id="routineInput" type="text" placeholder="新增例行事項…" />
-        <button id="routineAddBtn" type="button">+</button>
+    <div class="routine-col">
+      <div class="routine-panel">
+        <h2 class="routine-heading">每日例行</h2>
+        <div class="routine-hint">只紀錄最近日常最重要的三件事</div>
+        <div class="routine-progress" id="routineProgress"></div>
+        <ul class="routine-list" id="routineList"></ul>
+        <div class="routine-add-row" id="routineAddRow">
+          <input id="routineInput" type="text" placeholder="新增例行事項…" />
+          <button id="routineAddBtn" type="button">+</button>
+        </div>
+      </div>
+
+      <div class="reco-panel" id="recoPanel">
+        <div class="reco-panel-head">
+          <div>
+            <div class="reco-panel-title">🔮 今天可能想做</div>
+            <div class="reco-panel-sub">根據妳過去的紀錄推薦，點 + 直接加進今天</div>
+          </div>
+        </div>
+        <div class="reco-chips" id="recoChips"></div>
       </div>
     </div>
   </div>
@@ -2296,6 +2352,148 @@ window.initApp = function () {
     renderHistory();
   });
 
+  // "今天可能想做" — a lightweight, fully local recommendation panel. No AI
+  // call involved (this is a static page with no backend to hide an API key
+  // in), just rule-based signals built from data already on this device:
+  // sequence continuation from last week's same weekday, what tends to get
+  // captured on this same weekday, and which routine item tends to get
+  // skipped on this weekday. There's no way to dismiss the panel itself —
+  // it always shows something, even if that something is just an honest
+  // "not enough data yet" or "nothing left to suggest today".
+  function normText(t) {
+    return (t || "").trim().toLowerCase();
+  }
+
+  function computeRecommendations() {
+    const todaySet = new Set((captures[tk] || []).map(it => normText(it.text)));
+    const seen = new Set();
+    const results = [];
+    let candidateCount = 0;
+    function addResult(text, category, reason, addable, sentence) {
+      const norm = normText(text);
+      if (!norm) return;
+      candidateCount++;
+      if (todaySet.has(norm) || seen.has(norm)) return;
+      seen.add(norm);
+      results.push({ text: (text || "").trim(), category: category || DEFAULT_CATEGORY, reason, addable, sentence });
+    }
+
+    const todayWeekday = effectiveNow().getDay();
+
+    // 1) Sequence continuation: exactly one week ago (same weekday), did any
+    // capture end in a number that looks like part of a series (chapter 3,
+    // 第3章, day5...)? If so, suggest the next number in that series. Only
+    // fires off real signal (a number actually found last week) — no data,
+    // no suggestion.
+    const lastWeekKey = dateKeyWithOffset(-7);
+    const lastWeekLabel = "上" + weekday[todayWeekday];
+    (captures[lastWeekKey] || [])
+      .map(it => {
+        const m = (it.text || "").match(/(\d+)(?!.*\d)/);
+        return m ? { it, m } : null;
+      })
+      .filter(Boolean)
+      .slice(0, 2)
+      .forEach(({ it, m }) => {
+        const num = parseInt(m[1], 10);
+        const nextText = it.text.slice(0, m.index) + String(num + 1) + it.text.slice(m.index + m[1].length);
+        addResult(
+          nextText,
+          it.category,
+          null,
+          true,
+          `${lastWeekLabel}妳做了「${it.text}」，今天想接著做「${nextText}」嗎？`
+        );
+      });
+
+    // 2) Tasks that keep showing up on this same weekday (excluding today itself) —
+    // needs at least 2 past occurrences on this weekday, otherwise there's not
+    // enough signal to call it a pattern.
+    const freq = {};
+    Object.keys(captures).forEach(dateKey => {
+      if (dateKey === tk) return;
+      let d;
+      try { d = dateFromKey(dateKey); } catch (e) { return; }
+      if (isNaN(d) || d.getDay() !== todayWeekday) return;
+      (captures[dateKey] || []).forEach(it => {
+        const norm = normText(it.text);
+        if (!norm) return;
+        if (!freq[norm]) freq[norm] = { count: 0, lastCategory: it.category, lastTs: it.ts || 0, text: it.text };
+        freq[norm].count += 1;
+        if ((it.ts || 0) >= freq[norm].lastTs) {
+          freq[norm].lastTs = it.ts || 0;
+          freq[norm].lastCategory = it.category;
+          freq[norm].text = it.text;
+        }
+      });
+    });
+    Object.values(freq)
+      .filter(f => f.count >= 2)
+      .sort((a, b) => b.count - a.count || b.lastTs - a.lastTs)
+      .slice(0, 3)
+      .forEach(f => addResult(f.text, f.lastCategory, `${weekday[todayWeekday]}常做`, true));
+
+    // 3) A routine item that tends to get skipped specifically on this weekday —
+    // informational nudge only (it's already pinned in the routine panel, so no add button).
+    routines.forEach(r => {
+      if (!r.createdAt) return;
+      const cursor = new Date(r.createdAt);
+      cursor.setDate(cursor.getDate() + ((todayWeekday - cursor.getDay() + 7) % 7));
+      let total = 0, done = 0;
+      while (true) {
+        const dk = cursor.getFullYear() + "-" + String(cursor.getMonth()+1).padStart(2,"0") + "-" + String(cursor.getDate()).padStart(2,"0");
+        if (dk >= tk) break;
+        total++;
+        if (routineLog[dk] && routineLog[dk][r.id]) done++;
+        cursor.setDate(cursor.getDate() + 7);
+      }
+      if (total >= 2 && done / total < 0.34) {
+        addResult(`🔁 ${r.text}`, null, `${weekday[todayWeekday]}常忘記做`, false);
+      }
+    });
+
+    return { items: results.slice(0, 5), candidateCount };
+  }
+
+  function renderReco() {
+    const panel = document.getElementById("recoPanel");
+    const { items, candidateCount } = computeRecommendations();
+    const chipsEl = document.getElementById("recoChips");
+    if (candidateCount === 0) {
+      chipsEl.innerHTML = `<div class="reco-empty">預測不到，請再做多一點任務來幫助我學習你的工作習慣吧</div>`;
+    } else if (!items.length) {
+      chipsEl.innerHTML = `<div class="reco-empty">沒有更多預測啦</div>`;
+    } else {
+      chipsEl.innerHTML = items.map((it, i) => `
+        <span class="reco-chip" data-idx="${i}">
+          ${it.sentence
+            ? `<span>${escapeHtml(it.sentence)}</span>`
+            : `<span>${escapeHtml(it.text)}</span><span class="reco-chip-reason">・${escapeHtml(it.reason)}</span>`
+          }
+          ${it.addable ? `<button type="button" class="reco-chip-add" title="加入今天">+</button>` : ""}
+        </span>
+      `).join("");
+    }
+    panel._recoItems = items;
+  }
+
+  document.getElementById("recoChips").addEventListener("click", (e) => {
+    const btn = e.target.closest(".reco-chip-add");
+    if (!btn) return;
+    const chip = btn.closest(".reco-chip");
+    const idx = Number(chip.getAttribute("data-idx"));
+    const items = document.getElementById("recoPanel")._recoItems || [];
+    const it = items[idx];
+    if (!it) return;
+    ensureCategory(it.category);
+    if (!captures[tk]) captures[tk] = [];
+    captures[tk].push({ id: uid(), text: it.text, done: false, ts: Date.now(), category: it.category || DEFAULT_CATEGORY });
+    saveCaptures(captures);
+    renderItems();
+    renderHero();
+    renderReco();
+  });
+
   // A time-of-day greeting — uses the real clock (not the effective/night-owl
   // day), since it's about how the moment actually feels, not which day's
   // bucket things land in.
@@ -2314,6 +2512,7 @@ window.initApp = function () {
   renderItems();
   renderHistory();
   renderRoutines();
+  renderReco();
 };
 
 // Inside a Cowork artifact preview (window.cowork is injected by that viewer),
