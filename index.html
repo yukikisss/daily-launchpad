@@ -2285,6 +2285,19 @@ if (typeof window.cowork !== "undefined") {
     });
   }
 
+  // Wipes this browser's local copy of the app data. Called on logout so a
+  // second account signing in on the same computer starts clean instead of
+  // accidentally "seeding" its brand-new cloud doc from the previous
+  // account's leftover localStorage content.
+  function clearAllLocal() {
+    Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
+  }
+
+  function doSignOut() {
+    clearAllLocal();
+    signOut(auth).then(() => location.reload());
+  }
+
   let currentUid = null;
   let pushTimer = null;
 
@@ -2334,7 +2347,7 @@ if (typeof window.cowork !== "undefined") {
   function resetInactivityTimer() {
     clearTimeout(inactivityTimer);
     inactivityTimer = setTimeout(() => {
-      signOut(auth).then(() => location.reload());
+      doSignOut();
     }, INACTIVITY_LIMIT_MS);
   }
 
@@ -2633,7 +2646,7 @@ if (typeof window.cowork !== "undefined") {
   });
 
   document.getElementById("profileLogoutBtn").addEventListener("click", () => {
-    signOut(auth).then(() => location.reload());
+    doSignOut();
   });
 
   document.getElementById("profileChipBtn").addEventListener("click", (e) => {
@@ -2775,7 +2788,7 @@ if (typeof window.cowork !== "undefined") {
   });
 
   document.getElementById("verifyLogoutBtn").addEventListener("click", () => {
-    signOut(auth).then(() => location.reload());
+    doSignOut();
   });
 
   document.getElementById("checkVerifyBtn").addEventListener("click", async () => {
