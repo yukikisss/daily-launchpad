@@ -552,43 +552,137 @@
     position: fixed;
     top: 12px;
     right: 16px;
-    font-size: 12px;
-    color: #8A8878;
     z-index: 15;
+  }
+  .auth-error { color: #C6613F; font-size: 13px; margin: -6px 0 14px; display: none; }
+
+  /* Profile chip + dropdown */
+  .profile-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
     background: #FFFFFF;
     border: 1px solid #E9E8E1;
     border-radius: 999px;
-    padding: 6px 12px;
+    padding: 5px 14px 5px 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #2E2C27;
+    max-width: 200px;
   }
-  #authLogoutBtn {
-    background: none; border: none; color: #C6613F; cursor: pointer;
-    font-size: 12px; padding: 0; margin-left: 6px; font-weight: 600;
+  .profile-chip:hover { border-color: #F0D9C8; }
+  .profile-chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .auth-error { color: #C6613F; font-size: 13px; margin: -6px 0 14px; display: none; }
+  .profile-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #C6613F;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .profile-avatar-lg { width: 56px; height: 56px; font-size: 22px; }
+  .profile-dropdown {
+    display: none;
+    position: absolute;
+    top: 42px;
+    right: 0;
+    background: #fff;
+    border: 1px solid #E9E8E1;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(46,44,39,0.18);
+    padding: 16px;
+    width: 220px;
+  }
+  .profile-dropdown.open { display: block; }
+  .profile-dropdown-avatar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .profile-email {
+    font-size: 12px;
+    color: #ABA998;
+    word-break: break-all;
+    margin-bottom: 10px;
+  }
+  #profileLogoutBtn { color: #C6613F; text-align: center; font-weight: 600; }
 </style>
 </head>
 <body>
 
 <div class="overlay open" id="authOverlay">
   <div class="modal" style="max-width:360px;">
-    <h3 id="authTitle">登入</h3>
-    <div class="sub" id="authSub">用 Email 登入，資料就會自動跨裝置同步。</div>
-    <div class="field">
-      <label>Email</label>
-      <input type="text" id="authEmail" placeholder="you@example.com" autocomplete="username" />
+    <div id="authLoginView">
+      <h3 id="authTitle">登入</h3>
+      <div class="sub" id="authSub">用 Email 登入，資料就會自動跨裝置同步。</div>
+      <div class="field">
+        <label>Email</label>
+        <input type="text" id="authEmail" placeholder="you@example.com" autocomplete="username" />
+      </div>
+      <div class="field" style="margin-bottom:8px;">
+        <label>密碼</label>
+        <input type="password" id="authPassword" placeholder="至少 6 個字元" autocomplete="current-password" />
+      </div>
+      <div class="auth-error" id="authError"></div>
+      <div class="modal-actions" style="justify-content:space-between; align-items:center;">
+        <button class="btn-secondary" id="authToggleBtn" type="button">改成註冊新帳號</button>
+        <button class="btn-primary" id="authSubmitBtn" type="button">登入</button>
+      </div>
     </div>
-    <div class="field" style="margin-bottom:8px;">
-      <label>密碼</label>
-      <input type="password" id="authPassword" placeholder="至少 6 個字元" autocomplete="current-password" />
-    </div>
-    <div class="auth-error" id="authError"></div>
-    <div class="modal-actions" style="justify-content:space-between; align-items:center;">
-      <button class="btn-secondary" id="authToggleBtn" type="button">改成註冊新帳號</button>
-      <button class="btn-primary" id="authSubmitBtn" type="button">登入</button>
+    <div id="authVerifyView" style="display:none;">
+      <h3>請先驗證 Email</h3>
+      <div class="sub" id="verifySub"></div>
+      <div class="auth-error" id="verifyError"></div>
+      <div class="modal-actions" style="justify-content:space-between; align-items:center;">
+        <button class="btn-secondary" id="verifyLogoutBtn" type="button">登出</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-secondary" id="resendVerifyBtn" type="button">重寄驗證信</button>
+          <button class="btn-primary" id="checkVerifyBtn" type="button">我已驗證</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-<div id="authBar"><span id="authEmailLabel"></span><button id="authLogoutBtn" type="button">登出</button></div>
+<div id="authBar">
+  <button id="profileChipBtn" type="button" class="profile-chip">
+    <span class="profile-avatar" id="profileAvatarWrap">
+      <img id="profileAvatarImg" style="display:none;" />
+      <span id="profileAvatarInitial"></span>
+    </span>
+    <span class="profile-chip-name" id="profileChipName"></span>
+  </button>
+  <div class="profile-dropdown" id="profileDropdown">
+    <div class="profile-dropdown-avatar">
+      <span class="profile-avatar profile-avatar-lg" id="profileAvatarWrapLg">
+        <img id="profileAvatarImgLg" style="display:none;" />
+        <span id="profileAvatarInitialLg"></span>
+      </span>
+      <button type="button" id="avatarUploadBtn" class="btn-secondary" style="font-size:12px; padding:6px 10px;">上傳頭像</button>
+      <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
+    </div>
+    <div class="field" style="margin:0 0 10px;">
+      <label style="font-size:12px;">顯示名稱</label>
+      <input type="text" id="displayNameInput" placeholder="妳的名字" />
+    </div>
+    <div class="profile-email" id="profileEmailLabel"></div>
+    <div class="context-menu-divider" style="margin:0 0 8px;"></div>
+    <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
+  </div>
+</div>
 
 <div class="wrap" style="display:none;">
   <div class="date-line" id="dateLine"></div>
@@ -2007,13 +2101,26 @@ window.initApp = function () {
   renderHistory();
   renderRoutines();
 };
+
+// Inside a Cowork artifact preview (window.cowork is injected by that viewer),
+// skip the login gate entirely and just run locally off this browser's
+// localStorage — Cowork's preview is a private, single-viewer sandbox, and
+// this bypass doesn't depend on the Firebase module script below succeeding,
+// so the preview still works even if that CDN load is blocked in the sandbox.
+if (typeof window.cowork !== "undefined") {
+  document.getElementById("authOverlay").classList.remove("open");
+  document.getElementById("authBar").style.display = "none";
+  document.querySelector(".wrap").style.display = "";
+  document.getElementById("shutdownBtn").style.display = "";
+  window.initApp();
+}
 </script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-    createUserWithEmailAndPassword, signOut
+    createUserWithEmailAndPassword, signOut, sendEmailVerification
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, doc, onSnapshot, setDoc, serverTimestamp
@@ -2044,7 +2151,8 @@ window.initApp = function () {
     categories: "qc_categories_v1",
     catKeywords: "qc_cat_keywords_v1",
     routines: "qc_routines_v1",
-    routineLog: "qc_routine_log_v1"
+    routineLog: "qc_routine_log_v1",
+    profile: "qc_profile_v1"
   };
 
   function readAllLocal() {
@@ -2059,6 +2167,7 @@ window.initApp = function () {
     if (!out.catKeywords || typeof out.catKeywords !== "object") out.catKeywords = {};
     if (!Array.isArray(out.routines)) out.routines = [];
     if (!out.routineLog || typeof out.routineLog !== "object") out.routineLog = {};
+    if (!out.profile || typeof out.profile !== "object") out.profile = { displayName: "", avatar: null };
     return out;
   }
 
@@ -2086,8 +2195,17 @@ window.initApp = function () {
   }
   window.__cloudPush = scheduleCloudPush;
 
+  // Inside a Cowork artifact preview, the classic script at the bottom of the
+  // page already bypassed the login gate and started the app directly off
+  // localStorage — this whole auth/cloud-sync flow is for the real
+  // GitHub-hosted page only, so it's skipped entirely here.
+  const inCowork = typeof window.cowork !== "undefined";
+
   function showLogin(msg) {
+    if (inCowork) return;
     document.getElementById("authOverlay").classList.add("open");
+    document.getElementById("authLoginView").style.display = "block";
+    document.getElementById("authVerifyView").style.display = "none";
     document.getElementById("authBar").style.display = "none";
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
@@ -2096,23 +2214,97 @@ window.initApp = function () {
     else { e.style.display = "none"; }
   }
 
+  function showVerify(user) {
+    document.getElementById("authOverlay").classList.add("open");
+    document.getElementById("authLoginView").style.display = "none";
+    document.getElementById("authVerifyView").style.display = "block";
+    document.getElementById("authBar").style.display = "none";
+    document.querySelector(".wrap").style.display = "none";
+    document.getElementById("shutdownBtn").style.display = "none";
+    document.getElementById("verifySub").textContent =
+      `我們寄了一封驗證信到 ${user.email}，點裡面的連結後回來這裡按「我已驗證」。`;
+    document.getElementById("verifyError").style.display = "none";
+  }
+
+  let currentEmail = "";
+
+  function getProfile() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_KEYS.profile) || "null");
+      if (raw && typeof raw === "object") return raw;
+    } catch (e) {}
+    return { displayName: "", avatar: null };
+  }
+
+  function saveProfile(p) {
+    localStorage.setItem(LS_KEYS.profile, JSON.stringify(p));
+    scheduleCloudPush();
+    renderProfileChip();
+  }
+
+  function setAvatarEl(imgEl, initialEl, avatarDataUrl, initial) {
+    if (avatarDataUrl) {
+      imgEl.src = avatarDataUrl;
+      imgEl.style.display = "block";
+      initialEl.style.display = "none";
+    } else {
+      imgEl.style.display = "none";
+      initialEl.style.display = "block";
+      initialEl.textContent = initial;
+    }
+  }
+
+  function renderProfileChip() {
+    const profile = getProfile();
+    const label = profile.displayName || currentEmail || "";
+    const initial = (label.trim().charAt(0) || "?").toUpperCase();
+    document.getElementById("profileChipName").textContent = label;
+    setAvatarEl(document.getElementById("profileAvatarImg"), document.getElementById("profileAvatarInitial"), profile.avatar, initial);
+    setAvatarEl(document.getElementById("profileAvatarImgLg"), document.getElementById("profileAvatarInitialLg"), profile.avatar, initial);
+    document.getElementById("displayNameInput").value = profile.displayName || "";
+    document.getElementById("profileEmailLabel").textContent = currentEmail;
+  }
+
+  // Crops/resizes an uploaded photo down to a small square JPEG before storing
+  // it as a data URL — keeps the profile doc tiny regardless of the original
+  // photo's size, since it rides along in the same Firestore doc as everything else.
+  function compressImageToDataUrl(file, size) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          const side = Math.min(img.width, img.height);
+          const sx = (img.width - side) / 2;
+          const sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          resolve(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = reject;
+        img.src = reader.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
   function revealApp(email) {
     document.getElementById("authOverlay").classList.remove("open");
     document.querySelector(".wrap").style.display = "";
     document.getElementById("shutdownBtn").style.display = "";
-    document.getElementById("authBar").style.display = "flex";
-    document.getElementById("authEmailLabel").textContent = email || "";
+    document.getElementById("authBar").style.display = "block";
+    currentEmail = email || "";
+    renderProfileChip();
   }
 
   let unsubSnap = null;
 
-  onAuthStateChanged(auth, (user) => {
+  function startSync(user) {
     if (unsubSnap) { unsubSnap(); unsubSnap = null; }
-    if (!user) {
-      currentUid = null;
-      showLogin();
-      return;
-    }
     currentUid = user.uid;
     let firstSnapshot = true;
     const ref = doc(db, "users", user.uid);
@@ -2142,7 +2334,24 @@ window.initApp = function () {
       console.error(err);
       showLogin("同步時發生問題，檢查一下網路後重新整理試試");
     });
-  });
+  }
+
+  if (!inCowork) {
+    onAuthStateChanged(auth, (user) => {
+      if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+      if (!user) {
+        currentUid = null;
+        showLogin();
+        return;
+      }
+      // Real signups must verify their email before the app (and cloud sync) unlocks.
+      if (!user.emailVerified) {
+        showVerify(user);
+        return;
+      }
+      startSync(user);
+    });
+  }
 
   function friendlyAuthError(code) {
     const map = {
@@ -2182,7 +2391,8 @@ window.initApp = function () {
       if (authMode === "login") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(cred.user);
       }
     } catch (err) {
       errEl.textContent = friendlyAuthError(err.code);
@@ -2199,8 +2409,82 @@ window.initApp = function () {
     if (e.key === "Enter") document.getElementById("authPassword").focus();
   });
 
-  document.getElementById("authLogoutBtn").addEventListener("click", () => {
+  document.getElementById("profileLogoutBtn").addEventListener("click", () => {
     signOut(auth).then(() => location.reload());
+  });
+
+  document.getElementById("profileChipBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("profileDropdown").classList.toggle("open");
+  });
+  document.getElementById("profileDropdown").addEventListener("click", (e) => e.stopPropagation());
+  document.addEventListener("click", () => {
+    document.getElementById("profileDropdown").classList.remove("open");
+  });
+
+  document.getElementById("displayNameInput").addEventListener("change", (e) => {
+    const p = getProfile();
+    p.displayName = e.target.value.trim();
+    saveProfile(p);
+  });
+  document.getElementById("displayNameInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") e.target.blur();
+  });
+
+  document.getElementById("avatarUploadBtn").addEventListener("click", () => {
+    document.getElementById("avatarFileInput").click();
+  });
+  document.getElementById("avatarFileInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    compressImageToDataUrl(file, 128).then(dataUrl => {
+      const p = getProfile();
+      p.avatar = dataUrl;
+      saveProfile(p);
+    }).catch(() => {});
+  });
+
+  document.getElementById("verifyLogoutBtn").addEventListener("click", () => {
+    signOut(auth).then(() => location.reload());
+  });
+
+  document.getElementById("checkVerifyBtn").addEventListener("click", async () => {
+    const user = auth.currentUser;
+    const errEl = document.getElementById("verifyError");
+    if (!user) return;
+    const btn = document.getElementById("checkVerifyBtn");
+    btn.disabled = true;
+    try {
+      await user.reload();
+      if (user.emailVerified) {
+        startSync(user);
+      } else {
+        errEl.textContent = "還沒偵測到驗證，確認信箱點過連結後再試一次";
+        errEl.style.display = "block";
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("resendVerifyBtn").addEventListener("click", async () => {
+    const user = auth.currentUser;
+    const errEl = document.getElementById("verifyError");
+    if (!user) return;
+    const btn = document.getElementById("resendVerifyBtn");
+    btn.disabled = true;
+    try {
+      await sendEmailVerification(user);
+      errEl.style.color = "#6B6A63";
+      errEl.textContent = "已經重新寄出，記得看一下垃圾郵件夾";
+      errEl.style.display = "block";
+    } catch (err) {
+      errEl.style.color = "#C6613F";
+      errEl.textContent = "寄送失敗，稍等一下再試";
+      errEl.style.display = "block";
+    } finally {
+      btn.disabled = false;
+    }
   });
 </script>
 </body>
