@@ -622,6 +622,22 @@
   }
   #profileLogoutBtn { color: #C6613F; text-align: center; font-weight: 600; }
 
+  #syncOverlay { z-index: 45; }
+  .sync-drop-zone {
+    border: 2px dashed #DEC3B3;
+    border-radius: 12px;
+    padding: 28px 16px;
+    text-align: center;
+    color: #8A8878;
+    font-size: 13px;
+    cursor: pointer;
+    background: #FFFBF8;
+    margin-top: 14px;
+  }
+  .sync-drop-zone:hover { border-color: #C6613F; color: #C6613F; }
+  .sync-drop-zone.drag-over { border-color: #C6613F; background: #FFF6F1; color: #C6613F; }
+  .sync-drop-icon { font-size: 26px; margin-bottom: 6px; }
+
   /* Soft, dismissible reminder — not a gate — for an unverified email */
   #verifyReminder {
     display: none;
@@ -730,19 +746,33 @@
     </div>
     <div class="profile-email" id="profileEmailLabel"></div>
     <div class="context-menu-divider" style="margin:0 0 6px;"></div>
-    <button type="button" class="context-menu-item" id="exportBackupBtn">📤 匯出備份</button>
-    <button type="button" class="context-menu-item" id="importBackupBtn">📥 匯入備份</button>
-    <input type="file" id="importBackupFileInput" accept="application/json,.json" style="display:none;" />
-    <div id="importConfirmRow" style="display:none; padding:2px 10px 6px;">
-      <div style="font-size:12px; color:#C6613F; margin-bottom:6px;">這會覆蓋目前所有資料，確定嗎？</div>
-      <div style="display:flex; gap:6px;">
-        <button type="button" class="btn-secondary" id="importCancelBtn" style="font-size:12px; padding:5px 10px;">取消</button>
-        <button type="button" class="btn-primary" id="importConfirmBtn" style="font-size:12px; padding:5px 10px;">確認匯入</button>
+    <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
+    <div class="context-menu-divider" style="margin:6px 0 8px;"></div>
+    <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
+  </div>
+</div>
+
+<div class="overlay" id="syncOverlay">
+  <div class="modal" style="max-width:420px;">
+    <h3>同步歷史</h3>
+    <div class="sub">匯出目前所有資料成備份檔，或匯入之前匯出的備份檔，換帳號時可以用這個互傳資料。</div>
+    <div id="syncDropZone" class="sync-drop-zone">
+      <div class="sync-drop-icon">📥</div>
+      <div>把備份檔拖到這裡，或點擊選擇檔案</div>
+    </div>
+    <input type="file" id="syncFileInput" accept="application/json,.json" style="display:none;" />
+    <div id="syncImportConfirm" style="display:none; margin-top:12px;">
+      <div style="font-size:13px; color:#C6613F; margin-bottom:8px;">這會覆蓋目前所有資料，確定要匯入嗎？</div>
+      <div class="modal-actions" style="justify-content:flex-end;">
+        <button class="btn-secondary" id="syncImportCancelBtn" type="button">取消</button>
+        <button class="btn-primary" id="syncImportConfirmBtn" type="button">確認匯入</button>
       </div>
     </div>
-    <div id="importBackupMsg" style="font-size:12px; color:#ABA998; padding:0 10px 4px; display:none;"></div>
-    <div class="context-menu-divider" style="margin:2px 0 8px;"></div>
-    <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
+    <div id="syncMsg" style="display:none; font-size:12px; margin-top:10px;"></div>
+    <div class="modal-actions" style="justify-content:space-between; align-items:center; margin-top:16px;">
+      <button class="btn-secondary" id="syncCloseBtn" type="button">關閉</button>
+      <button class="btn-primary" id="syncExportBtn" type="button">一鍵導出</button>
+    </div>
   </div>
 </div>
 
@@ -2293,8 +2323,37 @@ if (typeof window.cowork !== "undefined") {
     document.getElementById("resetError").style.display = "none";
   }
 
+  // Auto-logout after 5 hours with no interaction on this tab — resets on any
+  // click/keypress/scroll/touch, so it only fires on a genuinely idle session
+  // (e.g. left open overnight on a shared computer), not while she's away from
+  // the keyboard for a few minutes mid-flow.
+  const INACTIVITY_LIMIT_MS = 5 * 60 * 60 * 1000;
+  let inactivityTimer = null;
+  let inactivityMonitorStarted = false;
+
+  function resetInactivityTimer() {
+    clearTimeout(inactivityTimer);
+    inactivityTimer = setTimeout(() => {
+      signOut(auth).then(() => location.reload());
+    }, INACTIVITY_LIMIT_MS);
+  }
+
+  function startInactivityMonitor() {
+    if (inactivityMonitorStarted) { resetInactivityTimer(); return; }
+    inactivityMonitorStarted = true;
+    ["mousemove", "mousedown", "keydown", "touchstart", "scroll", "click"].forEach(evt => {
+      document.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+    resetInactivityTimer();
+  }
+
+  function stopInactivityMonitor() {
+    clearTimeout(inactivityTimer);
+  }
+
   function showLogin(msg) {
     if (inCowork) return;
+    stopInactivityMonitor();
     document.getElementById("authOverlay").classList.add("open");
     showLoginView();
     document.getElementById("authBar").style.display = "none";
@@ -2450,6 +2509,7 @@ if (typeof window.cowork !== "undefined") {
         writeAllLocal(data);
         revealApp(user.email);
         updateVerifyReminder(user);
+        startInactivityMonitor();
         window.initApp();
         return;
       }
@@ -2609,7 +2669,7 @@ if (typeof window.cowork !== "undefined") {
 
   // Backup / restore — a portable JSON snapshot of every localStorage key this
   // app uses. This is also the manual way to move data between two accounts:
-  // export from one, sign into the other, import the file.
+  // export from one, sign into the other, drag the file into the drop zone.
   function downloadJson(obj, filename) {
     const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -2622,7 +2682,29 @@ if (typeof window.cowork !== "undefined") {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  document.getElementById("exportBackupBtn").addEventListener("click", () => {
+  let pendingImportData = null;
+
+  function resetSyncOverlay() {
+    pendingImportData = null;
+    document.getElementById("syncImportConfirm").style.display = "none";
+    document.getElementById("syncMsg").style.display = "none";
+    document.getElementById("syncDropZone").classList.remove("drag-over");
+  }
+
+  document.getElementById("syncHistoryBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    resetSyncOverlay();
+    document.getElementById("syncOverlay").classList.add("open");
+    document.getElementById("profileDropdown").classList.remove("open");
+  });
+  document.getElementById("syncCloseBtn").addEventListener("click", () => {
+    document.getElementById("syncOverlay").classList.remove("open");
+  });
+  document.getElementById("syncOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "syncOverlay") document.getElementById("syncOverlay").classList.remove("open");
+  });
+
+  document.getElementById("syncExportBtn").addEventListener("click", () => {
     const data = readAllLocal();
     data.exportedAt = new Date().toISOString();
     data.app = "daily-launchpad-backup";
@@ -2630,16 +2712,8 @@ if (typeof window.cowork !== "undefined") {
     downloadJson(data, `daily-launchpad-backup-${stamp}.json`);
   });
 
-  let pendingImportData = null;
-
-  document.getElementById("importBackupBtn").addEventListener("click", () => {
-    document.getElementById("importBackupFileInput").value = "";
-    document.getElementById("importBackupFileInput").click();
-  });
-
-  document.getElementById("importBackupFileInput").addEventListener("change", (e) => {
-    const file = e.target.files && e.target.files[0];
-    const msgEl = document.getElementById("importBackupMsg");
+  function readBackupFile(file) {
+    const msgEl = document.getElementById("syncMsg");
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
@@ -2648,8 +2722,10 @@ if (typeof window.cowork !== "undefined") {
         if (!parsed || typeof parsed !== "object") throw new Error("bad format");
         pendingImportData = parsed;
         msgEl.style.display = "none";
-        document.getElementById("importConfirmRow").style.display = "block";
+        document.getElementById("syncImportConfirm").style.display = "block";
       } catch (err) {
+        pendingImportData = null;
+        document.getElementById("syncImportConfirm").style.display = "none";
         msgEl.style.color = "#C6613F";
         msgEl.textContent = "這個檔案看起來不是有效的備份檔";
         msgEl.style.display = "block";
@@ -2661,14 +2737,37 @@ if (typeof window.cowork !== "undefined") {
       msgEl.style.display = "block";
     };
     reader.readAsText(file);
+  }
+
+  const syncDropZone = document.getElementById("syncDropZone");
+  syncDropZone.addEventListener("click", () => {
+    document.getElementById("syncFileInput").value = "";
+    document.getElementById("syncFileInput").click();
+  });
+  document.getElementById("syncFileInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    readBackupFile(file);
+  });
+  syncDropZone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    syncDropZone.classList.add("drag-over");
+  });
+  syncDropZone.addEventListener("dragleave", () => {
+    syncDropZone.classList.remove("drag-over");
+  });
+  syncDropZone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    syncDropZone.classList.remove("drag-over");
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    readBackupFile(file);
   });
 
-  document.getElementById("importCancelBtn").addEventListener("click", () => {
+  document.getElementById("syncImportCancelBtn").addEventListener("click", () => {
     pendingImportData = null;
-    document.getElementById("importConfirmRow").style.display = "none";
+    document.getElementById("syncImportConfirm").style.display = "none";
   });
 
-  document.getElementById("importConfirmBtn").addEventListener("click", () => {
+  document.getElementById("syncImportConfirmBtn").addEventListener("click", () => {
     if (!pendingImportData) return;
     writeAllLocal(pendingImportData);
     if (currentUid) scheduleCloudPush(); // carries the imported data over to this account's cloud doc too
