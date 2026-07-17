@@ -2417,7 +2417,8 @@ window.initApp = function () {
     if (name) applyCtxCategoryChange(name);
   });
   document.getElementById("ctxNewCatInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") { e.preventDefault(); document.getElementById("ctxNewCatConfirm").click(); }
+    // Same IME-composition guard as captureInput — see its comment further down.
+    if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); document.getElementById("ctxNewCatConfirm").click(); }
     if (e.key === "Escape") { document.getElementById("ctxNewCatRow").style.display = "none"; }
   });
 
@@ -3409,7 +3410,8 @@ window.initApp = function () {
     }
     input.addEventListener("blur", commit);
     input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); commit(); }
+      // Same IME-composition guard as captureInput — see its comment further down.
+      if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) { e.preventDefault(); commit(); }
       if (e.key === "Escape") { e.preventDefault(); cancel(); }
     });
   }
@@ -3501,7 +3503,8 @@ window.initApp = function () {
     input.focus();
   });
   document.getElementById("routineInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
+    // Same IME-composition guard as captureInput below — see its comment.
+    if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) {
       addRoutine(e.target.value);
       e.target.value = "";
     }
@@ -3608,7 +3611,12 @@ window.initApp = function () {
     input.focus();
   });
   document.getElementById("captureInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
+    // isComposing is true while a Chinese/Japanese/Korean IME's candidate
+    // window is still open — the Enter that confirms the IME's own
+    // candidate (e.g. finishing typing "bug" while pinyin input is on)
+    // fires as a real keydown too. Without this guard that Enter got
+    // treated as "submit the task", cutting the text off mid-word.
+    if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) {
       addCapture(e.target.value);
       e.target.value = "";
     }
@@ -4557,7 +4565,8 @@ if (typeof window.cowork !== "undefined") {
     saveProfile(p);
   });
   document.getElementById("displayNameInput").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") e.target.blur();
+    // Same IME-composition guard as captureInput — see its comment further up.
+    if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) e.target.blur();
   });
 
   document.getElementById("avatarUploadBtn").addEventListener("click", () => {
