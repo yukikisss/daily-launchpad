@@ -716,6 +716,9 @@
     <div id="authLoginView">
       <h3 id="authTitle">登入</h3>
       <div class="sub" id="authSub">用 Email 登入，資料就會自動跨裝置同步。</div>
+      <div id="switchCancelRow" style="display:none; margin:-4px 0 14px;">
+        <button type="button" id="switchCancelBtn" style="background:none;border:none;color:#8A8878;font-size:12px;cursor:pointer;padding:0;text-decoration:underline;">取消，返回目前帳號</button>
+      </div>
       <div class="field">
         <label>Email</label>
         <input type="text" id="authEmail" placeholder="you@example.com" autocomplete="username" />
@@ -724,15 +727,8 @@
         <label>密碼</label>
         <input type="password" id="authPassword" placeholder="至少 6 個字元" autocomplete="current-password" />
       </div>
-      <div style="text-align:right; margin-bottom:12px;">
+      <div style="text-align:right; margin-bottom:14px;">
         <button type="button" id="forgotPasswordBtn" style="background:none;border:none;color:#8A8878;font-size:12px;cursor:pointer;padding:0;text-decoration:underline;">忘記密碼？</button>
-      </div>
-      <div style="margin:0 0 14px;">
-        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#2E2C27; cursor:pointer;">
-          <input type="checkbox" id="rememberMeCheckbox" style="width:auto; margin:0;" />
-          記住我 30 天
-        </label>
-        <div style="font-size:11px; color:#ABA998; margin:4px 0 0 22px;">如果這不是你自己的設備，請勿勾選這個選項</div>
       </div>
       <div class="auth-error" id="authError"></div>
       <div class="modal-actions" style="justify-content:space-between; align-items:center;">
@@ -2281,8 +2277,7 @@ if (typeof window.cowork !== "undefined") {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-    createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail,
-    setPersistence, browserLocalPersistence, browserSessionPersistence
+    createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, doc, onSnapshot, setDoc, serverTimestamp
@@ -2352,8 +2347,6 @@ if (typeof window.cowork !== "undefined") {
   // the switch-account picker can show avatar/name without needing to be
   // signed in as that account. Never used to skip the actual password.
   const KNOWN_ACCOUNTS_KEY = "qc_known_accounts_v1";
-  const REMEMBER_UNTIL_KEY = "qc_remember_until_v1";
-  const REMEMBER_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
   function escapeHtmlSimple(str) {
     const div = document.createElement("div");
@@ -2396,6 +2389,8 @@ if (typeof window.cowork !== "undefined") {
   }
 
   let currentUid = null;
+  let currentUserEmail = null;
+  let inSwitchFlow = false;
   let pushTimer = null;
 
   // Debounced push: every save*() call in the main app triggers this, so any
@@ -2470,6 +2465,8 @@ if (typeof window.cowork !== "undefined") {
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
     document.getElementById("verifyReminder").style.display = "none";
+    inSwitchFlow = false;
+    document.getElementById("switchCancelRow").style.display = "none";
     const e = document.getElementById("authError");
     if (msg) { e.textContent = msg; e.style.display = "block"; }
     else { e.style.display = "none"; }
@@ -2590,6 +2587,8 @@ if (typeof window.cowork !== "undefined") {
 
   function revealApp(email) {
     document.getElementById("authOverlay").classList.remove("open");
+    document.getElementById("switchCancelRow").style.display = "none";
+    inSwitchFlow = false;
     document.querySelector(".wrap").style.display = "";
     document.getElementById("shutdownBtn").style.display = "";
     document.getElementById("authBar").style.display = "block";
@@ -2601,7 +2600,17 @@ if (typeof window.cowork !== "undefined") {
 
   function startSync(user) {
     if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+    // Switching straight from one signed-in account to another (no logout in
+    // between) means whatever is still sitting in localStorage belongs to the
+    // account being left — snapshot it into the known-accounts list and clear
+    // it before the new account's data loads in, so a brand-new account never
+    // gets seeded from the previous one's leftovers.
+    if (currentUid && currentUid !== user.uid) {
+      upsertKnownAccount({ uid: currentUid, email: currentUserEmail }, getProfile());
+      clearAllLocal();
+    }
     currentUid = user.uid;
+    currentUserEmail = user.email;
     let firstSnapshot = true;
     const ref = doc(db, "users", user.uid);
     unsubSnap = onSnapshot(ref, async (snap) => {
@@ -2641,15 +2650,6 @@ if (typeof window.cowork !== "undefined") {
       if (!user) {
         currentUid = null;
         showLogin();
-        return;
-      }
-      // "記住我 30 天" is enforced here, on top of Firebase's own persistence —
-      // a remembered session that's simply outlived its 30 days gets signed
-      // out instead of staying valid indefinitely.
-      const rememberUntil = Number(localStorage.getItem(REMEMBER_UNTIL_KEY) || 0);
-      if (rememberUntil && Date.now() > rememberUntil) {
-        localStorage.removeItem(REMEMBER_UNTIL_KEY);
-        doSignOut();
         return;
       }
       // Verification is a reminder, not a gate — Firebase's free shared
@@ -2692,22 +2692,13 @@ if (typeof window.cowork !== "undefined") {
       return;
     }
     const btn = document.getElementById("authSubmitBtn");
-    const rememberMe = document.getElementById("rememberMeCheckbox").checked;
     btn.disabled = true;
     try {
-      // Unchecked = session-only persistence, so simply closing the browser
-      // already signs her out next time — no auto-login unless she opted in.
-      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       if (authMode === "login") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await sendEmailVerification(cred.user);
-      }
-      if (rememberMe) {
-        localStorage.setItem(REMEMBER_UNTIL_KEY, String(Date.now() + REMEMBER_DAYS_MS));
-      } else {
-        localStorage.removeItem(REMEMBER_UNTIL_KEY);
       }
     } catch (err) {
       errEl.textContent = friendlyAuthError(err.code);
@@ -2800,28 +2791,29 @@ if (typeof window.cowork !== "undefined") {
     }).join("");
   }
 
-  // Switching accounts signs out of the current one WITHOUT the full-page
-  // reload that a normal logout does — that way the email can just be filled
-  // straight into the still-live login form, no round trip through
-  // sessionStorage/reload timing to get it wrong.
-  async function switchToAccountLogin(email) {
+  // Switching accounts no longer signs out up front — it just opens the
+  // login form, with the current account still fully signed in underneath,
+  // untouched. Only a *successful* sign-in as the new account actually
+  // replaces the session (Firebase does that automatically); cancelling just
+  // closes the form and the original account is exactly as it was.
+  function switchToAccountLogin(email) {
     document.getElementById("switchOverlay").classList.remove("open");
-    if (auth.currentUser) {
-      const user = auth.currentUser;
-      upsertKnownAccount(user, getProfile());
-      clearAllLocal();
-      if (unsubSnap) { unsubSnap(); unsubSnap = null; }
-      currentUid = null;
-      stopInactivityMonitor();
-      try { await signOut(auth); } catch (err) { /* fall through to showing the login form regardless */ }
-    }
-    showLogin();
+    document.getElementById("authOverlay").classList.add("open");
+    showLoginView();
+    document.getElementById("authError").style.display = "none";
     if (authMode !== "login") document.getElementById("authToggleBtn").click();
     document.getElementById("authEmail").value = email;
     document.getElementById("authPassword").value = "";
-    document.getElementById("rememberMeCheckbox").checked = false;
     document.getElementById("authPassword").focus();
+    inSwitchFlow = true;
+    document.getElementById("switchCancelRow").style.display = "block";
   }
+
+  document.getElementById("switchCancelBtn").addEventListener("click", () => {
+    inSwitchFlow = false;
+    document.getElementById("switchCancelRow").style.display = "none";
+    document.getElementById("authOverlay").classList.remove("open");
+  });
 
   document.getElementById("switchAccountBtn").addEventListener("click", (e) => {
     e.stopPropagation();
