@@ -753,7 +753,7 @@
   }
   #profileLogoutBtn { color: #C6613F; font-weight: 600; }
 
-  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay { z-index: 46; }
+  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay, #planOverlay { z-index: 46; }
   /* Reachable from both the pre-login auth screen (z-index 50) and the
      post-login settings menu, so it needs to outrank everything else. */
   #langOverlay { z-index: 55; }
@@ -958,6 +958,8 @@
     <h3 id="settingsTitleH3">設定</h3>
     <div class="sub" id="settingsSub">資料備份與跨裝置相關的功能都在這裡。</div>
     <div id="settingsMainView" style="margin-top:14px;">
+      <button type="button" class="context-menu-item" id="openPlanBtn">💎 會員方案</button>
+      <div class="settings-divider"></div>
       <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
       <div class="settings-divider"></div>
       <button type="button" class="context-menu-item" id="openLanguageBtn">🌐 繁中 / 简中 / English / 한국어 / Español</button>
@@ -976,6 +978,27 @@
         <button class="btn-primary" id="deleteAccountConfirmBtn" type="button">確認註銷</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="planOverlay">
+  <div class="modal" style="max-width:380px; position:relative;">
+    <button type="button" id="planCloseBtn" class="modal-close-x" title="關閉">×</button>
+    <h3 id="planTitleH3">💎 會員方案</h3>
+    <div id="planFreeView">
+      <div class="sub" id="planFreeSub">免費版可以用全部的基本功能。升級解鎖跨裝置同步和「今天可能想做」智能推薦。</div>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-top:16px;">
+        <button class="btn-primary" type="button" id="planMonthlyBtn" style="width:100%;">月繳升級</button>
+        <button class="btn-secondary" type="button" id="planAnnualBtn" style="width:100%;">年繳升級（省 15%）</button>
+      </div>
+      <div id="planTrialNote" style="font-size:12px; color:#6B6A63; margin-top:10px; text-align:center;">7 天免費試用，到期前可隨時取消。</div>
+    </div>
+    <div id="planActiveView" style="display:none;">
+      <div class="sub" id="planActiveSub">妳目前是 Pro 會員，已解鎖跨裝置同步和智能推薦。</div>
+      <button class="btn-primary" type="button" id="planManageBtn" style="width:100%; margin-top:16px;">管理訂閱</button>
+    </div>
+    <div id="planErrorMsg" class="auth-error" style="display:none; margin-top:10px;"></div>
+    <div id="planLoadingMsg" style="display:none; font-size:12px; color:#6B6A63; margin-top:10px; text-align:center;">處理中…</div>
   </div>
 </div>
 
@@ -1161,6 +1184,12 @@ const I18N = {
     profile_upload_avatar: "上傳頭像", profile_display_name: "顯示名稱", profile_name_placeholder: "妳的名字",
     settings_sub: "資料備份與跨裝置相關的功能都在這裡。",
     settings_sync_history: "🔄 同步歷史", settings_delete_account: "🗑️ 註銷帳號",
+    plan_menu_item: "💎 會員方案", plan_title: "💎 會員方案",
+    plan_free_sub: "免費版可以用全部的基本功能。升級解鎖跨裝置同步和「今天可能想做」智能推薦。",
+    plan_monthly_btn: "月繳升級", plan_annual_btn: "年繳升級（省 15%）",
+    plan_trial_note: "7 天免費試用，到期前可隨時取消。",
+    plan_active_sub: "妳目前是 Pro 會員，已解鎖跨裝置同步和智能推薦。",
+    plan_manage_btn: "管理訂閱", plan_error_generic: "發生錯誤，請稍後再試。",
     settings_language: "🌐 語言",
     delete_account_warning: "註銷帳號會永久刪除妳的所有資料，且無法復原。請輸入密碼確認。",
     delete_account_password_placeholder: "輸入密碼確認",
@@ -1230,6 +1259,7 @@ const I18N = {
     reco_empty_no_data: "預測不到，請再做多一點任務來幫助我學習你的工作習慣吧",
     reco_empty_all_added: "沒有更多預測啦",
     reco_add_title: "加入今天",
+    reco_locked_sub: "升級 Pro 解鎖智能推薦", reco_locked_btn: "升級解鎖",
     error_sync_problem: "同步時發生問題，檢查一下網路後重新整理試試",
     auth_error_invalid_email: "Email 格式不對，檢查一下",
     auth_error_user_not_found: "找不到這個帳號，要不要改成「註冊新帳號」？",
@@ -1277,6 +1307,12 @@ const I18N = {
     profile_upload_avatar: "上传头像", profile_display_name: "显示名称", profile_name_placeholder: "你的名字",
     settings_sub: "资料备份与跨设备相关的功能都在这里。",
     settings_sync_history: "🔄 同步历史", settings_delete_account: "🗑️ 注销账号",
+    plan_menu_item: "💎 会员方案", plan_title: "💎 会员方案",
+    plan_free_sub: "免费版可以用全部的基本功能。升级解锁跨设备同步和「今天可能想做」智能推荐。",
+    plan_monthly_btn: "月付升级", plan_annual_btn: "年付升级（省 15%）",
+    plan_trial_note: "7 天免费试用，到期前可随时取消。",
+    plan_active_sub: "你目前是 Pro 会员，已解锁跨设备同步和智能推荐。",
+    plan_manage_btn: "管理订阅", plan_error_generic: "发生错误，请稍后再试。",
     settings_language: "🌐 语言",
     delete_account_warning: "注销账号会永久删除你的所有资料，且无法恢复。请输入密码确认。",
     delete_account_password_placeholder: "输入密码确认",
@@ -1346,6 +1382,7 @@ const I18N = {
     reco_empty_no_data: "预测不到，请再做多一点任务来帮助我学习你的工作习惯吧",
     reco_empty_all_added: "没有更多预测啦",
     reco_add_title: "加入今天",
+    reco_locked_sub: "升级 Pro 解锁智能推荐", reco_locked_btn: "升级解锁",
     error_sync_problem: "同步时发生问题，检查一下网路后重新整理试试",
     auth_error_invalid_email: "Email 格式不对，检查一下",
     auth_error_user_not_found: "找不到这个账号，要不要改成「注册新账号」？",
@@ -1393,6 +1430,12 @@ const I18N = {
     profile_upload_avatar: "Upload avatar", profile_display_name: "Display name", profile_name_placeholder: "Your name",
     settings_sub: "Backup and cross-device features live here.",
     settings_sync_history: "🔄 Sync history", settings_delete_account: "🗑️ Delete account",
+    plan_menu_item: "💎 Membership", plan_title: "💎 Membership",
+    plan_free_sub: "The free plan includes all core features. Upgrade to unlock cross-device sync and \"You might want to do today\" smart suggestions.",
+    plan_monthly_btn: "Upgrade — Monthly", plan_annual_btn: "Upgrade — Annual (save 15%)",
+    plan_trial_note: "7-day free trial. Cancel anytime before it ends.",
+    plan_active_sub: "You're a Pro member — cross-device sync and smart suggestions are unlocked.",
+    plan_manage_btn: "Manage subscription", plan_error_generic: "Something went wrong. Please try again.",
     settings_language: "🌐 Language",
     delete_account_warning: "Deleting your account permanently erases all your data and can't be undone. Enter your password to confirm.",
     delete_account_password_placeholder: "Enter your password to confirm",
@@ -1462,6 +1505,7 @@ const I18N = {
     reco_empty_no_data: "Not enough data to predict yet — log a few more tasks so I can learn your habits",
     reco_empty_all_added: "No more suggestions for now",
     reco_add_title: "Add to today",
+    reco_locked_sub: "Upgrade to Pro to unlock smart suggestions", reco_locked_btn: "Upgrade to unlock",
     error_sync_problem: "Something went wrong syncing — check your connection and refresh",
     auth_error_invalid_email: "That email format doesn't look right",
     auth_error_user_not_found: "Can't find this account — want to switch to \"Create an account\"?",
@@ -1509,6 +1553,12 @@ const I18N = {
     profile_upload_avatar: "아바타 업로드", profile_display_name: "표시 이름", profile_name_placeholder: "이름을 입력하세요",
     settings_sub: "백업과 기기 간 동기화 관련 기능이 여기 있어요.",
     settings_sync_history: "🔄 동기화 기록", settings_delete_account: "🗑️ 계정 삭제",
+    plan_menu_item: "💎 멤버십", plan_title: "💎 멤버십",
+    plan_free_sub: "무료 버전에서도 기본 기능을 모두 사용할 수 있어요. 업그레이드하면 기기 간 동기화와 \"오늘 하고 싶을 만한 일\" 스마트 추천이 해제돼요.",
+    plan_monthly_btn: "월간 업그레이드", plan_annual_btn: "연간 업그레이드 (15% 할인)",
+    plan_trial_note: "7일 무료 체험. 종료 전 언제든 취소할 수 있어요.",
+    plan_active_sub: "현재 Pro 회원이에요. 기기 간 동기화와 스마트 추천이 해제되어 있어요.",
+    plan_manage_btn: "구독 관리", plan_error_generic: "오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
     settings_language: "🌐 언어",
     delete_account_warning: "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없어요. 비밀번호를 입력해 확인해 주세요.",
     delete_account_password_placeholder: "확인할 비밀번호를 입력하세요",
@@ -1578,6 +1628,7 @@ const I18N = {
     reco_empty_no_data: "아직 예측할 데이터가 부족해요. 몇 가지 더 기록하면 습관을 학습할 수 있어요",
     reco_empty_all_added: "더 이상 추천할 게 없어요",
     reco_add_title: "오늘에 추가",
+    reco_locked_sub: "Pro로 업그레이드하면 스마트 추천이 해제돼요", reco_locked_btn: "업그레이드",
     error_sync_problem: "동기화 중 문제가 발생했어요. 네트워크를 확인하고 새로고침해보세요",
     auth_error_invalid_email: "이메일 형식이 올바르지 않아요",
     auth_error_user_not_found: "이 계정을 찾을 수 없어요. \"새 계정 만들기\"로 전환할까요?",
@@ -1625,6 +1676,12 @@ const I18N = {
     profile_upload_avatar: "Subir avatar", profile_display_name: "Nombre visible", profile_name_placeholder: "Tu nombre",
     settings_sub: "Aquí están las funciones de copia de seguridad y sincronización entre dispositivos.",
     settings_sync_history: "🔄 Historial de sincronización", settings_delete_account: "🗑️ Eliminar cuenta",
+    plan_menu_item: "💎 Membresía", plan_title: "💎 Membresía",
+    plan_free_sub: "El plan gratuito incluye todas las funciones básicas. Actualiza para desbloquear la sincronización entre dispositivos y las sugerencias inteligentes de \"Quizás quieras hacer hoy\".",
+    plan_monthly_btn: "Mejorar — Mensual", plan_annual_btn: "Mejorar — Anual (ahorra 15%)",
+    plan_trial_note: "7 días de prueba gratis. Cancela cuando quieras antes de que termine.",
+    plan_active_sub: "Eres miembro Pro: la sincronización entre dispositivos y las sugerencias inteligentes están desbloqueadas.",
+    plan_manage_btn: "Gestionar suscripción", plan_error_generic: "Algo salió mal. Inténtalo de nuevo.",
     settings_language: "🌐 Idioma",
     delete_account_warning: "Eliminar tu cuenta borrará todos tus datos de forma permanente y no se puede deshacer. Ingresa tu contraseña para confirmar.",
     delete_account_password_placeholder: "Ingresa tu contraseña para confirmar",
@@ -1694,6 +1751,7 @@ const I18N = {
     reco_empty_no_data: "Aún no hay suficientes datos para predecir — registra algunas tareas más para que pueda aprender tus hábitos",
     reco_empty_all_added: "No hay más sugerencias por ahora",
     reco_add_title: "Añadir a hoy",
+    reco_locked_sub: "Mejora a Pro para desbloquear sugerencias inteligentes", reco_locked_btn: "Mejorar para desbloquear",
     error_sync_problem: "Hubo un problema al sincronizar — revisa tu conexión y recarga la página",
     auth_error_invalid_email: "El formato del correo no es válido",
     auth_error_user_not_found: "No encontramos esta cuenta — ¿quieres cambiar a \"Crear una cuenta\"?",
@@ -1833,7 +1891,12 @@ function applyStaticI18n() {
     saveBtn: "btn_save_and_end",
     routineAddBtn: null,
     routineFab: null,
-    shutdownBtn: "btn_shutdown"
+    shutdownBtn: "btn_shutdown",
+    openPlanBtn: "plan_menu_item",
+    planCloseBtn: null,
+    planMonthlyBtn: "plan_monthly_btn",
+    planAnnualBtn: "plan_annual_btn",
+    planManageBtn: "plan_manage_btn"
   };
   Object.keys(map).forEach(id => {
     const key = map[id];
@@ -1876,7 +1939,8 @@ function applyStaticI18n() {
     routineDrawerCloseBtn: "btn_close",
     newAttachBtn: "capture_attach_title",
     reminderDismissBtn: "verify_dismiss_title",
-    routineFab: "routine_fab_title"
+    routineFab: "routine_fab_title",
+    planCloseBtn: "btn_close"
   };
   Object.keys(titles).forEach(id => {
     const el = document.getElementById(id);
@@ -1917,7 +1981,11 @@ function applyStaticI18n() {
     resetTitleH3: "auth_reset_title",
     resetSub: "auth_reset_sub",
     verifyTitleH3: "auth_verify_title",
-    labelEmailReset: "label_email"
+    labelEmailReset: "label_email",
+    planTitleH3: "plan_title",
+    planFreeSub: "plan_free_sub",
+    planTrialNote: "plan_trial_note",
+    planActiveSub: "plan_active_sub"
   };
   Object.keys(staticText).forEach(id => {
     const el = document.getElementById(id);
@@ -1971,6 +2039,74 @@ document.getElementById("langOptionList").addEventListener("click", (e) => {
   if (!btn) return;
   setLang(btn.getAttribute("data-lang"));
   document.getElementById("langOverlay").classList.remove("open");
+});
+
+// Membership / subscription panel. Reads the read-only subscription status
+// that the module script keeps mirrored on window.__getSubscription() — this
+// script never writes that field itself; the actual Checkout/Portal calls
+// live in the module script (window.__startUpgrade / window.__openManageSubscription)
+// since those need the Firebase Functions SDK.
+function isSubscriptionUnlocked() {
+  const sub = (window.__getSubscription && window.__getSubscription()) || { status: "none" };
+  return sub.status === "active" || sub.status === "trialing";
+}
+window.__isSubscriptionUnlocked = isSubscriptionUnlocked;
+function refreshPlanOverlayView() {
+  const unlocked = isSubscriptionUnlocked();
+  document.getElementById("planFreeView").style.display = unlocked ? "none" : "";
+  document.getElementById("planActiveView").style.display = unlocked ? "" : "none";
+}
+function setPlanLoading(loading) {
+  document.getElementById("planLoadingMsg").style.display = loading ? "" : "none";
+  ["planMonthlyBtn", "planAnnualBtn", "planManageBtn"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = loading;
+  });
+}
+function showPlanError() {
+  const el = document.getElementById("planErrorMsg");
+  el.textContent = t("plan_error_generic");
+  el.style.display = "";
+  setPlanLoading(false);
+}
+document.getElementById("openPlanBtn").addEventListener("click", () => {
+  document.getElementById("settingsOverlay").classList.remove("open");
+  document.getElementById("planErrorMsg").style.display = "none";
+  refreshPlanOverlayView();
+  document.getElementById("planOverlay").classList.add("open");
+});
+document.getElementById("planCloseBtn").addEventListener("click", () => {
+  document.getElementById("planOverlay").classList.remove("open");
+});
+document.getElementById("planOverlay").addEventListener("click", (e) => {
+  if (e.target.id === "planOverlay") document.getElementById("planOverlay").classList.remove("open");
+});
+document.getElementById("planMonthlyBtn").addEventListener("click", async () => {
+  document.getElementById("planErrorMsg").style.display = "none";
+  setPlanLoading(true);
+  try { await window.__startUpgrade("monthly"); }
+  catch (e) { console.error(e); showPlanError(); }
+});
+document.getElementById("planAnnualBtn").addEventListener("click", async () => {
+  document.getElementById("planErrorMsg").style.display = "none";
+  setPlanLoading(true);
+  try { await window.__startUpgrade("annual"); }
+  catch (e) { console.error(e); showPlanError(); }
+});
+document.getElementById("planManageBtn").addEventListener("click", async () => {
+  document.getElementById("planErrorMsg").style.display = "none";
+  setPlanLoading(true);
+  try { await window.__openManageSubscription(); }
+  catch (e) { console.error(e); showPlanError(); }
+});
+// A reco-panel upsell button (added in renderReco()) opens the same overlay,
+// pre-scrolled to the upgrade options — reuse the same open path.
+document.addEventListener("click", (e) => {
+  if (e.target.closest && e.target.closest("#recoUpgradeBtn")) {
+    document.getElementById("planErrorMsg").style.display = "none";
+    refreshPlanOverlayView();
+    document.getElementById("planOverlay").classList.add("open");
+  }
 });
 
 window.initApp = function () {
@@ -2306,7 +2442,9 @@ window.initApp = function () {
   // so partial overlaps like "客戶資料" vs "客戶" still connect).
   function tokenize(text) {
     const tokens = [];
-    const enMatches = text.toLowerCase().match(/[a-z0-9]+/g);
+    // Includes Spanish diacritics (áéíóúñü) so accented words tokenize whole
+    // instead of splitting into fragments around the accent.
+    const enMatches = text.toLowerCase().match(/[a-z0-9áéíóúñü]+/g);
     if (enMatches) tokens.push(...enMatches);
     const hanziRuns = text.match(/[一-龥]+/g);
     if (hanziRuns) {
@@ -2315,7 +2453,100 @@ window.initApp = function () {
         for (let i = 0; i < run.length - 1; i++) tokens.push(run.slice(i, i + 2));
       });
     }
+    // Korean (Hangul) — words are already space-separated, so whole runs
+    // are enough; no need for the Chinese bigram-splitting trick.
+    const hangulRuns = text.match(/[가-힣]+/g);
+    if (hangulRuns) tokens.push(...hangulRuns);
     return tokens;
+  }
+
+  // Built-in starter categories: a generic, multi-language keyword→category
+  // table that ships with the app, completely separate from catKeywords
+  // above (which is only ever built from THIS user's own explicit #tags and
+  // corrections). This is what lets a brand-new user with zero history still
+  // get a sensible category guess instead of everything landing in 未分類.
+  // Personal catKeywords always wins when it has any match at all — this
+  // table is only consulted as a fallback net; see guessCategory() below.
+  const SEED_CATEGORY_KEYWORDS = {
+    work: [
+      "開會", "會議", "報告", "簡報", "案子", "專案", "客戶", "老闆", "同事", "加班", "上班", "面試", "履歷", "提案", "合約", "郵件",
+      "开会", "会议", "报告", "简报", "专案", "客户", "老板", "面试", "履历", "合同", "邮件",
+      "meeting", "report", "presentation", "project", "client", "boss", "colleague", "work", "interview", "resume", "email", "deadline", "proposal", "contract", "overtime",
+      "회의", "보고서", "발표", "프로젝트", "고객", "상사", "동료", "출근", "면접", "이력서", "이메일", "마감", "계약",
+      "reunión", "informe", "proyecto", "cliente", "jefe", "trabajo", "entrevista", "currículum", "correo", "propuesta", "contrato"
+    ],
+    study: [
+      "論文", "作業", "考試", "研究", "唸書", "上課", "課堂", "教授", "期末", "期中", "文獻", "投稿",
+      "论文", "作业", "考试", "念书", "上课", "课堂", "文献",
+      "dissertation", "thesis", "chapter", "homework", "exam", "study", "lecture", "professor", "research", "paper", "assignment", "class", "reading", "citation", "draft",
+      "논문", "숙제", "시험", "연구", "공부", "수업", "교수", "과제", "리포트",
+      "tesis", "capítulo", "examen", "estudiar", "clase", "profesor", "investigación", "tarea", "ensayo"
+    ],
+    health: [
+      "運動", "健身", "跑步", "瑜珈", "看醫生", "吃藥", "睡覺", "喝水", "散步", "重訓", "游泳", "拉伸", "體檢", "看牙醫",
+      "运动", "瑜伽", "看医生", "吃药", "睡觉", "重训", "体检", "看牙医",
+      "gym", "workout", "run", "yoga", "doctor", "exercise", "medicine", "sleep", "walk", "stretch", "swim", "dentist", "checkup",
+      "운동", "헬스", "달리기", "요가", "병원", "약", "수면", "산책", "수영", "치과", "건강검진",
+      "gimnasio", "ejercicio", "correr", "yoga", "médico", "medicina", "dormir", "caminar", "nadar", "dentista"
+    ],
+    chores: [
+      "打掃", "洗衣服", "買菜", "煮飯", "倒垃圾", "洗碗", "整理", "收拾", "採買", "繳費", "水電費", "房租",
+      "打扫", "买菜", "煮饭", "采买", "缴费", "水电费",
+      "clean", "laundry", "groceries", "cook", "trash", "dishes", "tidy", "organize", "rent", "bills", "shopping",
+      "청소", "빨래", "장보기", "요리", "쓰레기", "설거지", "정리", "월세", "공과금",
+      "limpiar", "lavandería", "comestibles", "cocinar", "basura", "platos", "ordenar", "renta", "factura"
+    ],
+    finance: [
+      "帳單", "報稅", "存錢", "投資", "轉帳", "信用卡", "預算", "扣款", "保險",
+      "账单", "报税", "存钱", "投资", "转账", "预算", "保险",
+      "bill", "tax", "savings", "invest", "transfer", "budget", "payment", "insurance", "bank",
+      "청구서", "세금", "저축", "투자", "이체", "신용카드", "예산", "보험", "은행",
+      "factura", "impuesto", "ahorro", "invertir", "transferencia", "tarjeta", "presupuesto", "pago", "seguro", "banco"
+    ],
+    social: [
+      "聚餐", "約會", "朋友", "聚會", "生日", "慶祝", "聯絡", "拜訪", "派對", "見面",
+      "约会", "聚会", "庆祝", "联络", "拜访", "派对", "见面",
+      "dinner", "date", "friend", "party", "birthday", "celebrate", "hangout", "visit", "meetup",
+      "회식", "데이트", "친구", "모임", "생일", "축하", "연락", "방문", "파티",
+      "cena", "cita", "amigo", "fiesta", "cumpleaños", "celebrar", "visitar"
+    ]
+  };
+  // Localized display name per seed category, keyed the same way as I18N —
+  // this is what actually gets stored on the item/category list, so a guess
+  // made while the UI is in English shows up as "Work", not "工作".
+  const SEED_CATEGORY_NAMES = {
+    work: { "zh-Hant": "工作", "zh-Hans": "工作", en: "Work", ko: "업무", es: "Trabajo" },
+    study: { "zh-Hant": "學業", "zh-Hans": "学业", en: "Study", ko: "학업", es: "Estudio" },
+    health: { "zh-Hant": "健康", "zh-Hans": "健康", en: "Health", ko: "건강", es: "Salud" },
+    chores: { "zh-Hant": "家務", "zh-Hans": "家务", en: "Chores", ko: "집안일", es: "Tareas del hogar" },
+    finance: { "zh-Hant": "財務", "zh-Hans": "财务", en: "Finance", ko: "재정", es: "Finanzas" },
+    social: { "zh-Hant": "社交", "zh-Hans": "社交", en: "Social", ko: "사교", es: "Social" }
+  };
+  // Precomputed once at startup: { work: { token: 1, ... }, ... } — built with
+  // the exact same tokenizer real capture text goes through, so a seed entry
+  // like "meeting" and typed text "team meeting" land on the same token.
+  const seedCatKeywords = {};
+  Object.keys(SEED_CATEGORY_KEYWORDS).forEach(id => {
+    const table = {};
+    SEED_CATEGORY_KEYWORDS[id].forEach(phrase => {
+      tokenize(phrase).forEach(tok => { table[tok] = 1; });
+    });
+    seedCatKeywords[id] = table;
+  });
+
+  // Shared scoring logic behind both the personal-history guess and the
+  // built-in seed-dictionary guess below — sum up keyword weights per
+  // candidate category/id and return whichever scores highest (if any).
+  function bestMatchFromTable(tokens, table) {
+    let best = null, bestScore = 0;
+    Object.keys(table).forEach(key => {
+      if (key === DEFAULT_CATEGORY) return;
+      const inner = table[key];
+      let score = 0;
+      tokens.forEach(t => { if (inner[t]) score += inner[t]; });
+      if (score > bestScore) { bestScore = score; best = key; }
+    });
+    return bestScore > 0 ? best : null;
   }
 
   // Nudge a category's keyword weights up (direction 1) or down (direction -1).
@@ -2333,19 +2564,22 @@ window.initApp = function () {
     saveCatKeywords(catKeywords);
   }
 
-  // Guess a category for un-tagged text from previously learned keyword weights.
-  // Never guesses into 未分類 itself — that's the fallback when nothing matches.
+  // Guess a category for un-tagged text. Tries this user's own learned
+  // keyword weights first (built only from their explicit #tags and manual
+  // corrections — see updateCatKeywords), and only falls back to the
+  // built-in generic seed dictionary if that comes up empty. This means a
+  // returning user's own vocabulary always takes priority, while a
+  // brand-new user with no history yet still gets a sensible first guess
+  // instead of everything landing in 未分類. Never guesses into 未分類
+  // itself — that's the fallback when nothing matches either table.
   function guessCategory(tokens) {
     if (!tokens.length) return null;
-    let best = null, bestScore = 0;
-    Object.keys(catKeywords).forEach(cat => {
-      if (cat === DEFAULT_CATEGORY) return;
-      const table = catKeywords[cat];
-      let score = 0;
-      tokens.forEach(t => { if (table[t]) score += table[t]; });
-      if (score > bestScore) { bestScore = score; best = cat; }
-    });
-    return bestScore > 0 ? best : null;
+    const personal = bestMatchFromTable(tokens, catKeywords);
+    if (personal) return personal;
+    const seedId = bestMatchFromTable(tokens, seedCatKeywords);
+    if (!seedId) return null;
+    const names = SEED_CATEGORY_NAMES[seedId];
+    return (names && (names[currentLang] || names["zh-Hant"])) || null;
   }
 
   // Words that place an item on a past day instead of today — all five UI
@@ -3533,8 +3767,18 @@ window.initApp = function () {
 
   function renderReco() {
     const panel = document.getElementById("recoPanel");
-    const { items, candidateCount } = computeRecommendations();
     const chipsEl = document.getElementById("recoChips");
+    if (!isSubscriptionUnlocked()) {
+      chipsEl.innerHTML = `
+        <div class="reco-empty">
+          <div>${t("reco_locked_sub")}</div>
+          <button type="button" id="recoUpgradeBtn" class="btn-primary" style="margin-top:10px; padding:8px 16px; font-size:13px;">${t("reco_locked_btn")}</button>
+        </div>
+      `;
+      panel._recoItems = [];
+      return;
+    }
+    const { items, candidateCount } = computeRecommendations();
     if (candidateCount === 0) {
       chipsEl.innerHTML = `<div class="reco-empty">${t("reco_empty_no_data")}</div>`;
     } else if (!items.length) {
@@ -3633,6 +3877,9 @@ if (typeof window.cowork !== "undefined") {
   import {
     getFirestore, doc, onSnapshot, setDoc, serverTimestamp, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getFunctions, httpsCallable
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAdygkR6stCwRBYC1W91aiWAWoKsfqt268",
@@ -3647,6 +3894,34 @@ if (typeof window.cowork !== "undefined") {
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const functionsClient = getFunctions(app);
+
+  // Subscription status mirrored from users/{uid}.subscription (written only
+  // by the Cloud Functions in functions/index.js — never by this client) so
+  // the classic script can gate paid features without importing Firebase
+  // itself. Kept in sync on every Firestore snapshot; see startSync() below.
+  let currentSubscription = { status: "none" };
+  window.__getSubscription = () => currentSubscription;
+  function applySubscription(data) {
+    currentSubscription = (data && data.subscription) || { status: "none" };
+    if (window.__i18nRerender) window.__i18nRerender();
+  }
+  function cloudRestoreUnlocked(data) {
+    const s = data && data.subscription && data.subscription.status;
+    return s === "active" || s === "trialing";
+  }
+  window.__startUpgrade = async function (plan) {
+    const fn = httpsCallable(functionsClient, "createCheckoutSession");
+    const res = await fn({ plan });
+    if (res.data && res.data.url) location.href = res.data.url;
+    else throw new Error("no checkout url returned");
+  };
+  window.__openManageSubscription = async function () {
+    const fn = httpsCallable(functionsClient, "createPortalSession");
+    const res = await fn({});
+    if (res.data && res.data.url) location.href = res.data.url;
+    else throw new Error("no portal url returned");
+  };
 
   // Identifies writes made by *this* browser tab this session, so its own
   // Firestore write echoing back through onSnapshot doesn't trigger a
@@ -3978,9 +4253,17 @@ if (typeof window.cowork !== "undefined") {
         return; // onSnapshot fires again now that the doc exists
       }
       const data = snap.data();
+      // Subscription status always flows through live, regardless of tier —
+      // it's how a free user's upgrade actually takes effect without a
+      // manual refresh. It's the app-data pull below (captures/history/
+      // routines/profile) that's gated by tier, not this.
+      applySubscription(data);
       if (firstSnapshot) {
         firstSnapshot = false;
-        writeAllLocal(data);
+        // 免費版：這台裝置的本機資料就是這台裝置的資料，雲端只當備份，換裝置
+        // 登入不會被雲端內容蓋掉（也就不會「自動跨裝置同步」）。
+        // 付費版：一律以雲端最新資料為準，換哪台裝置登入都拿得到最新內容。
+        if (cloudRestoreUnlocked(data)) writeAllLocal(data);
         upsertKnownAccount(user, data.profile);
         revealApp(user.email);
         updateVerifyReminder(user);
@@ -3989,6 +4272,7 @@ if (typeof window.cowork !== "undefined") {
         return;
       }
       if (data.writerId === SESSION_ID) return; // echo of our own write — local state already matches
+      if (!cloudRestoreUnlocked(data)) return; // free tier: don't pull live changes from other devices
       // A change arrived from another device/session — reload so every render
       // path picks it up cleanly instead of trying to patch live state.
       writeAllLocal(data);
