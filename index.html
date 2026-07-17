@@ -623,6 +623,43 @@
   #profileLogoutBtn { color: #C6613F; text-align: center; font-weight: 600; }
 
   #syncOverlay { z-index: 45; }
+  .modal-close-x {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #ABA998;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+  }
+  .modal-close-x:hover { color: #C6613F; }
+
+  .account-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .account-row:hover { background: #FAFAF8; }
+  .account-row-avatar { width: 34px; height: 34px; font-size: 14px; }
+  .account-row-label {
+    flex: 1;
+    font-size: 14px;
+    color: #2E2C27;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .account-row-remove {
+    background: none; border: none; color: #C7C5B8; cursor: pointer;
+    font-size: 16px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+  }
+  .account-row-remove:hover { color: #C6613F; }
   .sync-drop-zone {
     border: 2px dashed #DEC3B3;
     border-radius: 12px;
@@ -690,6 +727,13 @@
       <div style="text-align:right; margin-bottom:12px;">
         <button type="button" id="forgotPasswordBtn" style="background:none;border:none;color:#8A8878;font-size:12px;cursor:pointer;padding:0;text-decoration:underline;">忘記密碼？</button>
       </div>
+      <div style="margin:0 0 14px;">
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:#2E2C27; cursor:pointer;">
+          <input type="checkbox" id="rememberMeCheckbox" style="width:auto; margin:0;" />
+          記住我 30 天
+        </label>
+        <div style="font-size:11px; color:#ABA998; margin:4px 0 0 22px;">如果這不是你自己的設備，請勿勾選這個選項</div>
+      </div>
       <div class="auth-error" id="authError"></div>
       <div class="modal-actions" style="justify-content:space-between; align-items:center;">
         <button class="btn-secondary" id="authToggleBtn" type="button">改成註冊新帳號</button>
@@ -747,13 +791,25 @@
     <div class="profile-email" id="profileEmailLabel"></div>
     <div class="context-menu-divider" style="margin:0 0 6px;"></div>
     <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
+    <button type="button" class="context-menu-item" id="switchAccountBtn">🔀 切換帳號</button>
     <div class="context-menu-divider" style="margin:6px 0 8px;"></div>
     <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
   </div>
 </div>
 
+<div class="overlay" id="switchOverlay">
+  <div class="modal" style="max-width:380px; position:relative;">
+    <button type="button" id="switchCloseBtn" class="modal-close-x" title="關閉">×</button>
+    <h3>切換帳號</h3>
+    <div class="sub">選一個在這台設備登入過的帳號，或加入新的帳號。這裡只是快速選擇，還是需要輸入密碼才能登入。</div>
+    <div id="knownAccountsList" style="margin:14px 0;"></div>
+    <button class="btn-secondary" id="switchAddAccountBtn" type="button" style="width:100%;">+ 登入其他帳號</button>
+  </div>
+</div>
+
 <div class="overlay" id="syncOverlay">
-  <div class="modal" style="max-width:420px;">
+  <div class="modal" style="max-width:420px; position:relative;">
+    <button type="button" id="syncCloseBtn" class="modal-close-x" title="關閉">×</button>
     <h3>同步歷史</h3>
     <div class="sub">匯出目前所有資料成備份檔，或匯入之前匯出的備份檔，換帳號時可以用這個互傳資料。</div>
     <div id="syncDropZone" class="sync-drop-zone">
@@ -769,10 +825,7 @@
       </div>
     </div>
     <div id="syncMsg" style="display:none; font-size:12px; margin-top:10px;"></div>
-    <div class="modal-actions" style="justify-content:space-between; align-items:center; margin-top:16px;">
-      <button class="btn-secondary" id="syncCloseBtn" type="button">關閉</button>
-      <button class="btn-primary" id="syncExportBtn" type="button">一鍵導出</button>
-    </div>
+    <button class="btn-primary" id="syncExportBtn" type="button" style="width:100%; margin-top:16px;">一鍵導出</button>
   </div>
 </div>
 
@@ -2228,7 +2281,8 @@ if (typeof window.cowork !== "undefined") {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-    createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail
+    createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail,
+    setPersistence, browserLocalPersistence, browserSessionPersistence
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
     getFirestore, doc, onSnapshot, setDoc, serverTimestamp
@@ -2293,7 +2347,50 @@ if (typeof window.cowork !== "undefined") {
     Object.values(LS_KEYS).forEach(key => localStorage.removeItem(key));
   }
 
+  // Device-level memory of "who has logged in here before", kept separate
+  // from the per-account app data above — it survives logout on purpose, so
+  // the switch-account picker can show avatar/name without needing to be
+  // signed in as that account. Never used to skip the actual password.
+  const KNOWN_ACCOUNTS_KEY = "qc_known_accounts_v1";
+  const REMEMBER_UNTIL_KEY = "qc_remember_until_v1";
+  const REMEMBER_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
+  function escapeHtmlSimple(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  function loadKnownAccounts() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(KNOWN_ACCOUNTS_KEY) || "[]");
+      if (Array.isArray(raw)) return raw;
+    } catch (e) {}
+    return [];
+  }
+  function saveKnownAccounts(list) {
+    localStorage.setItem(KNOWN_ACCOUNTS_KEY, JSON.stringify(list));
+  }
+  function upsertKnownAccount(user, profile) {
+    if (!user) return;
+    const list = loadKnownAccounts();
+    const idx = list.findIndex(a => a.uid === user.uid);
+    const entry = {
+      uid: user.uid,
+      email: user.email,
+      displayName: (profile && profile.displayName) || "",
+      avatar: (profile && profile.avatar) || null
+    };
+    if (idx === -1) list.push(entry); else list[idx] = entry;
+    saveKnownAccounts(list);
+  }
+  function removeKnownAccount(uid) {
+    saveKnownAccounts(loadKnownAccounts().filter(a => a.uid !== uid));
+  }
+
   function doSignOut() {
+    const user = auth.currentUser;
+    if (user) upsertKnownAccount(user, getProfile());
     clearAllLocal();
     signOut(auth).then(() => location.reload());
   }
@@ -2373,6 +2470,12 @@ if (typeof window.cowork !== "undefined") {
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
     document.getElementById("verifyReminder").style.display = "none";
+    const pendingEmail = sessionStorage.getItem("qc_pending_switch_email");
+    if (pendingEmail) {
+      document.getElementById("authEmail").value = pendingEmail;
+      sessionStorage.removeItem("qc_pending_switch_email");
+      setTimeout(() => document.getElementById("authPassword").focus(), 0);
+    }
     const e = document.getElementById("authError");
     if (msg) { e.textContent = msg; e.style.display = "block"; }
     else { e.style.display = "none"; }
@@ -2520,6 +2623,7 @@ if (typeof window.cowork !== "undefined") {
       if (firstSnapshot) {
         firstSnapshot = false;
         writeAllLocal(data);
+        upsertKnownAccount(user, data.profile);
         revealApp(user.email);
         updateVerifyReminder(user);
         startInactivityMonitor();
@@ -2543,6 +2647,15 @@ if (typeof window.cowork !== "undefined") {
       if (!user) {
         currentUid = null;
         showLogin();
+        return;
+      }
+      // "記住我 30 天" is enforced here, on top of Firebase's own persistence —
+      // a remembered session that's simply outlived its 30 days gets signed
+      // out instead of staying valid indefinitely.
+      const rememberUntil = Number(localStorage.getItem(REMEMBER_UNTIL_KEY) || 0);
+      if (rememberUntil && Date.now() > rememberUntil) {
+        localStorage.removeItem(REMEMBER_UNTIL_KEY);
+        doSignOut();
         return;
       }
       // Verification is a reminder, not a gate — Firebase's free shared
@@ -2585,13 +2698,22 @@ if (typeof window.cowork !== "undefined") {
       return;
     }
     const btn = document.getElementById("authSubmitBtn");
+    const rememberMe = document.getElementById("rememberMeCheckbox").checked;
     btn.disabled = true;
     try {
+      // Unchecked = session-only persistence, so simply closing the browser
+      // already signs her out next time — no auto-login unless she opted in.
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
       if (authMode === "login") {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         await sendEmailVerification(cred.user);
+      }
+      if (rememberMe) {
+        localStorage.setItem(REMEMBER_UNTIL_KEY, String(Date.now() + REMEMBER_DAYS_MS));
+      } else {
+        localStorage.removeItem(REMEMBER_UNTIL_KEY);
       }
     } catch (err) {
       errEl.textContent = friendlyAuthError(err.code);
@@ -2656,6 +2778,79 @@ if (typeof window.cowork !== "undefined") {
   document.getElementById("profileDropdown").addEventListener("click", (e) => e.stopPropagation());
   document.addEventListener("click", () => {
     document.getElementById("profileDropdown").classList.remove("open");
+  });
+
+  // Switch-account picker: purely a device-local convenience list (avatar +
+  // nickname/email), never a login shortcut — picking a row still lands on
+  // the login form with just the email pre-filled, password still required.
+  function renderKnownAccounts() {
+    const listEl = document.getElementById("knownAccountsList");
+    const accounts = loadKnownAccounts();
+    if (!accounts.length) {
+      listEl.innerHTML = `<div class="empty-note">這台設備上還沒有登入紀錄</div>`;
+      return;
+    }
+    listEl.innerHTML = accounts.map(a => {
+      const label = a.displayName || a.email;
+      const initial = (label.trim().charAt(0) || "?").toUpperCase();
+      const avatarInner = a.avatar
+        ? `<img src="${a.avatar}" style="width:100%;height:100%;object-fit:cover;display:block;" />`
+        : `<span>${escapeHtmlSimple(initial)}</span>`;
+      return `
+        <div class="account-row" data-uid="${escapeHtmlSimple(a.uid)}" data-email="${escapeHtmlSimple(a.email)}">
+          <span class="profile-avatar account-row-avatar">${avatarInner}</span>
+          <span class="account-row-label">${escapeHtmlSimple(label)}</span>
+          <button type="button" class="account-row-remove" data-uid="${escapeHtmlSimple(a.uid)}" title="從清單移除（不會刪除帳號）">×</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  const PENDING_SWITCH_EMAIL_KEY = "qc_pending_switch_email";
+
+  function switchToAccountLogin(email) {
+    document.getElementById("switchOverlay").classList.remove("open");
+    if (auth.currentUser) {
+      // Signing out reloads the page (doSignOut), which would wipe any field
+      // we fill in right now — so the email rides through the reload in
+      // sessionStorage instead, and showLogin() picks it up on the fresh load.
+      if (email) sessionStorage.setItem(PENDING_SWITCH_EMAIL_KEY, email);
+      else sessionStorage.removeItem(PENDING_SWITCH_EMAIL_KEY);
+      doSignOut();
+      return;
+    }
+    if (authMode !== "login") document.getElementById("authToggleBtn").click();
+    document.getElementById("authEmail").value = email;
+    document.getElementById("authPassword").value = "";
+    document.getElementById("rememberMeCheckbox").checked = false;
+    document.getElementById("authPassword").focus();
+  }
+
+  document.getElementById("switchAccountBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    renderKnownAccounts();
+    document.getElementById("switchOverlay").classList.add("open");
+    document.getElementById("profileDropdown").classList.remove("open");
+  });
+  document.getElementById("switchCloseBtn").addEventListener("click", () => {
+    document.getElementById("switchOverlay").classList.remove("open");
+  });
+  document.getElementById("switchOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "switchOverlay") document.getElementById("switchOverlay").classList.remove("open");
+  });
+  document.getElementById("switchAddAccountBtn").addEventListener("click", () => {
+    switchToAccountLogin("");
+  });
+  document.getElementById("knownAccountsList").addEventListener("click", (e) => {
+    const removeBtn = e.target.closest(".account-row-remove");
+    if (removeBtn) {
+      e.stopPropagation();
+      removeKnownAccount(removeBtn.getAttribute("data-uid"));
+      renderKnownAccounts();
+      return;
+    }
+    const row = e.target.closest(".account-row");
+    if (row) switchToAccountLogin(row.getAttribute("data-email"));
   });
 
   document.getElementById("displayNameInput").addEventListener("change", (e) => {
