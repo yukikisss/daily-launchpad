@@ -940,6 +940,23 @@
   <div class="top-row">
     <div class="top-main">
       <div class="hero" id="heroCard"></div>
+
+      <div class="card">
+        <h2>隨手記錄</h2>
+        <div class="capture-row">
+          <input id="captureInput" type="text" placeholder="想到什麼就丟進來，不用想格式…" />
+          <button id="newAttachBtn" class="attach-new-btn" type="button" title="附加檔案（選填）">📎</button>
+          <button id="addBtn">加入</button>
+        </div>
+        <div class="new-attach-preview" id="newAttachPreview"></div>
+        <div class="capture-hint">打 #分類名稱 會自動歸類，同時教會系統這類內容以後自動歸到這個分類；不打的話系統會用之前學到的規則自動猜分類，猜錯了就在項目旁邊改一次，它會記住。打「今天/昨天/前天」或「7月9號」這種日期，加上「做了、完成了、done」，會自動判斷完成狀態和放到哪一天，例如「7月9號投遞了6份工作」。</div>
+        <div class="item-list" id="itemList"></div>
+      </div>
+
+      <details class="history">
+        <summary>查看過去的收尾紀錄</summary>
+        <div id="historyList" style="margin-top:8px;"></div>
+      </details>
     </div>
 
     <div class="routine-col">
@@ -965,23 +982,6 @@
       </div>
     </div>
   </div>
-
-  <div class="card">
-    <h2>隨手記錄</h2>
-    <div class="capture-row">
-      <input id="captureInput" type="text" placeholder="想到什麼就丟進來，不用想格式…" />
-      <button id="newAttachBtn" class="attach-new-btn" type="button" title="附加檔案（選填）">📎</button>
-      <button id="addBtn">加入</button>
-    </div>
-    <div class="new-attach-preview" id="newAttachPreview"></div>
-    <div class="capture-hint">打 #分類名稱 會自動歸類，同時教會系統這類內容以後自動歸到這個分類；不打的話系統會用之前學到的規則自動猜分類，猜錯了就在項目旁邊改一次，它會記住。打「今天/昨天/前天」或「7月9號」這種日期，加上「做了、完成了、done」，會自動判斷完成狀態和放到哪一天，例如「7月9號投遞了6份工作」。</div>
-    <div class="item-list" id="itemList"></div>
-  </div>
-
-  <details class="history">
-    <summary>查看過去的收尾紀錄</summary>
-    <div id="historyList" style="margin-top:8px;"></div>
-  </details>
 </div>
 
 <button id="shutdownBtn" style="display:none;">結束今天</button>
