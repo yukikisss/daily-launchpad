@@ -554,6 +554,21 @@
     top: 12px;
     right: 16px;
     z-index: 15;
+  }
+  .profile-card-toggle-avatar {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+  }
+  .profile-card-toggle-avatar:hover { opacity: 0.85; }
+  .profile-card-panel {
+    display: none;
+    position: absolute;
+    top: 48px;
+    right: 0;
     flex-direction: column;
     align-items: center;
     background: #FFFFFF;
@@ -561,8 +576,9 @@
     border-radius: 16px;
     padding: 16px 18px;
     width: 180px;
-    box-shadow: 0 4px 14px rgba(46,44,39,0.08);
+    box-shadow: 0 8px 24px rgba(46,44,39,0.18);
   }
+  .profile-card-panel.open { display: flex; }
   .auth-error { color: #C6613F; font-size: 13px; margin: -6px 0 14px; display: none; }
 
   /* Profile card — always-visible avatar + name + menu, no click-to-open dropdown */
@@ -769,16 +785,22 @@
   </div>
 </div>
 <div id="authBar">
-  <span class="profile-avatar profile-card-avatar" id="profileCardAvatarWrap">
-    <img id="profileCardAvatarImg" style="display:none;" />
-    <span id="profileCardAvatarInitial"></span>
-  </span>
-  <div class="profile-card-name" id="profileCardName"></div>
-  <div class="profile-card-menu">
-    <button type="button" class="profile-card-menu-item" id="openProfileBtn">個人檔案</button>
-    <button type="button" class="profile-card-menu-item" id="openSettingsBtn">設定</button>
-    <button type="button" class="profile-card-menu-item" id="switchAccountBtn">切換帳號</button>
-    <button type="button" class="profile-card-menu-item" id="profileLogoutBtn">登出</button>
+  <button type="button" id="profileCardToggle" class="profile-avatar profile-card-toggle-avatar">
+    <img id="profileToggleAvatarImg" style="display:none;" />
+    <span id="profileToggleAvatarInitial"></span>
+  </button>
+  <div class="profile-card-panel" id="profileCardPanel">
+    <span class="profile-avatar profile-card-avatar" id="profileCardAvatarWrap">
+      <img id="profileCardAvatarImg" style="display:none;" />
+      <span id="profileCardAvatarInitial"></span>
+    </span>
+    <div class="profile-card-name" id="profileCardName"></div>
+    <div class="profile-card-menu">
+      <button type="button" class="profile-card-menu-item" id="openProfileBtn">個人檔案</button>
+      <button type="button" class="profile-card-menu-item" id="openSettingsBtn">設定</button>
+      <button type="button" class="profile-card-menu-item" id="switchAccountBtn">切換帳號</button>
+      <button type="button" class="profile-card-menu-item" id="profileLogoutBtn">登出</button>
+    </div>
   </div>
 </div>
 
@@ -2572,6 +2594,7 @@ if (typeof window.cowork !== "undefined") {
     const label = profile.displayName || currentEmail || "";
     const initial = (label.trim().charAt(0) || "?").toUpperCase();
     document.getElementById("profileCardName").textContent = label;
+    setAvatarEl(document.getElementById("profileToggleAvatarImg"), document.getElementById("profileToggleAvatarInitial"), profile.avatar, initial);
     setAvatarEl(document.getElementById("profileCardAvatarImg"), document.getElementById("profileCardAvatarInitial"), profile.avatar, initial);
     setAvatarEl(document.getElementById("profileAvatarImgLg"), document.getElementById("profileAvatarInitialLg"), profile.avatar, initial);
     document.getElementById("displayNameInput").value = profile.displayName || "";
@@ -2611,7 +2634,7 @@ if (typeof window.cowork !== "undefined") {
     inSwitchFlow = false;
     document.querySelector(".wrap").style.display = "";
     document.getElementById("shutdownBtn").style.display = "";
-    document.getElementById("authBar").style.display = "flex";
+    document.getElementById("authBar").style.display = "block";
     currentEmail = email || "";
     renderProfileChip();
   }
@@ -2776,10 +2799,21 @@ if (typeof window.cowork !== "undefined") {
     doSignOut();
   });
 
-  // The profile card in the corner is always visible now (no click-to-open
-  // dropdown) — editing the avatar/nickname lives in its own "個人檔案" page,
-  // and account-sync-related actions live in a separate "設定" page.
+  // The small avatar in the corner toggles the bigger card open/closed —
+  // click it again, or click anywhere else on the page, to close it.
+  document.getElementById("profileCardToggle").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("profileCardPanel").classList.toggle("open");
+  });
+  document.getElementById("profileCardPanel").addEventListener("click", (e) => e.stopPropagation());
+  document.addEventListener("click", () => {
+    document.getElementById("profileCardPanel").classList.remove("open");
+  });
+
+  // Editing the avatar/nickname lives in its own "個人檔案" page, and
+  // account-sync-related actions live in a separate "設定" page.
   document.getElementById("openProfileBtn").addEventListener("click", () => {
+    document.getElementById("profileCardPanel").classList.remove("open");
     document.getElementById("profileOverlay").classList.add("open");
   });
   document.getElementById("profileOverlayCloseBtn").addEventListener("click", () => {
@@ -2790,6 +2824,7 @@ if (typeof window.cowork !== "undefined") {
   });
 
   document.getElementById("openSettingsBtn").addEventListener("click", () => {
+    document.getElementById("profileCardPanel").classList.remove("open");
     document.getElementById("settingsOverlay").classList.add("open");
   });
   document.getElementById("settingsOverlayCloseBtn").addEventListener("click", () => {
@@ -2850,6 +2885,7 @@ if (typeof window.cowork !== "undefined") {
   });
 
   document.getElementById("switchAccountBtn").addEventListener("click", () => {
+    document.getElementById("profileCardPanel").classList.remove("open");
     renderKnownAccounts();
     document.getElementById("switchOverlay").classList.add("open");
   });
