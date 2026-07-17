@@ -907,7 +907,7 @@
     <div class="profile-card-name" id="profileCardName"></div>
     <div class="profile-card-menu">
       <button type="button" class="profile-card-menu-item" id="openProfileBtn">個人檔案</button>
-      <button type="button" class="profile-card-menu-item" id="openSettingsBtn">設定</button>
+      <button type="button" class="profile-card-menu-item" id="openSettingsBtn">⚙️ 設定</button>
       <button type="button" class="profile-card-menu-item" id="switchAccountBtn">切換帳號</button>
       <button type="button" class="profile-card-menu-item" id="profileLogoutBtn">登出</button>
     </div>
@@ -1138,7 +1138,7 @@ const I18N = {
     auth_reset_title: "找回密碼",
     auth_reset_sub: "輸入註冊時用的、且已驗證過的 Email，我們會寄一封重設密碼的信給你。",
     auth_reset_back: "返回登入", auth_reset_submit: "寄送重設信",
-    menu_profile: "個人檔案", menu_settings: "設定", menu_switch_account: "切換帳號",
+    menu_profile: "個人檔案", menu_settings: "⚙️ 設定", menu_switch_account: "切換帳號",
     btn_close: "關閉",
     profile_upload_avatar: "上傳頭像", profile_display_name: "顯示名稱", profile_name_placeholder: "妳的名字",
     settings_sub: "資料備份與跨裝置相關的功能都在這裡。",
@@ -1254,7 +1254,7 @@ const I18N = {
     auth_reset_title: "找回密码",
     auth_reset_sub: "输入注册时用的、且已验证过的 Email，我们会寄一封重设密码的信给你。",
     auth_reset_back: "返回登录", auth_reset_submit: "发送重设信",
-    menu_profile: "个人档案", menu_settings: "设置", menu_switch_account: "切换账号",
+    menu_profile: "个人档案", menu_settings: "⚙️ 设置", menu_switch_account: "切换账号",
     btn_close: "关闭",
     profile_upload_avatar: "上传头像", profile_display_name: "显示名称", profile_name_placeholder: "你的名字",
     settings_sub: "资料备份与跨设备相关的功能都在这里。",
@@ -1370,7 +1370,7 @@ const I18N = {
     auth_reset_title: "Reset password",
     auth_reset_sub: "Enter the verified email you registered with, and we'll send you a password reset link.",
     auth_reset_back: "Back to log in", auth_reset_submit: "Send reset email",
-    menu_profile: "Profile", menu_settings: "Settings", menu_switch_account: "Switch account",
+    menu_profile: "Profile", menu_settings: "⚙️ Settings", menu_switch_account: "Switch account",
     btn_close: "Close",
     profile_upload_avatar: "Upload avatar", profile_display_name: "Display name", profile_name_placeholder: "Your name",
     settings_sub: "Backup and cross-device features live here.",
@@ -1486,7 +1486,7 @@ const I18N = {
     auth_reset_title: "비밀번호 찾기",
     auth_reset_sub: "가입할 때 사용한, 인증이 완료된 이메일을 입력하면 비밀번호 재설정 메일을 보내드려요.",
     auth_reset_back: "로그인으로 돌아가기", auth_reset_submit: "재설정 메일 보내기",
-    menu_profile: "프로필", menu_settings: "설정", menu_switch_account: "계정 전환",
+    menu_profile: "프로필", menu_settings: "⚙️ 설정", menu_switch_account: "계정 전환",
     btn_close: "닫기",
     profile_upload_avatar: "아바타 업로드", profile_display_name: "표시 이름", profile_name_placeholder: "이름을 입력하세요",
     settings_sub: "백업과 기기 간 동기화 관련 기능이 여기 있어요.",
@@ -1602,7 +1602,7 @@ const I18N = {
     auth_reset_title: "Recuperar contraseña",
     auth_reset_sub: "Ingresa el correo verificado con el que te registraste y te enviaremos un enlace para restablecer tu contraseña.",
     auth_reset_back: "Volver a iniciar sesión", auth_reset_submit: "Enviar correo de restablecimiento",
-    menu_profile: "Perfil", menu_settings: "Configuración", menu_switch_account: "Cambiar de cuenta",
+    menu_profile: "Perfil", menu_settings: "⚙️ Configuración", menu_switch_account: "Cambiar de cuenta",
     btn_close: "Cerrar",
     profile_upload_avatar: "Subir avatar", profile_display_name: "Nombre visible", profile_name_placeholder: "Tu nombre",
     settings_sub: "Aquí están las funciones de copia de seguridad y sincronización entre dispositivos.",
@@ -2322,22 +2322,40 @@ window.initApp = function () {
     return bestScore > 0 ? best : null;
   }
 
-  // Words that place an item on a past day instead of today. Checked longest-first
-  // so "大前天" isn't swallowed by a "前天" partial match.
-  const DATE_WORDS = [["大前天", -3], ["前天", -2], ["昨天", -1], ["今天", 0]];
+  // Words that place an item on a past day instead of today — all five UI
+  // languages' words live in one merged list (not switched by currentLang),
+  // so whichever language you happen to type in just works, regardless of
+  // which language the interface itself is currently showing. Checked in
+  // order, so longer/more-specific phrases that contain a shorter one as a
+  // substring (e.g. Spanish "anteayer" ends in "ayer") are listed first.
+  const DATE_WORDS = [
+    ["大前天", -3], ["前天", -2], ["昨天", -1], ["今天", 0],                 // zh
+    [/day before yesterday/i, -2], [/\byesterday\b/i, -1], [/\btoday\b/i, 0], // en
+    ["그끄제", -3], ["그저께", -2], ["그제", -2], ["어제", -1], ["오늘", 0],   // ko
+    [/anteayer/i, -2], [/\bayer\b/i, -1], [/\bhoy\b/i, 0]                    // es
+  ];
 
-  // Phrases that mean "this is already done". Checked longest-first for the same reason.
+  const MONTH_NAMES_EN = { january:1, february:2, march:3, april:4, may:5, june:6, july:7, august:8, september:9, october:10, november:11, december:12 };
+  const MONTH_NAMES_ES = { enero:1, febrero:2, marzo:3, abril:4, mayo:5, junio:6, julio:7, agosto:8, septiembre:9, octubre:10, noviembre:11, diciembre:12 };
+
+  // Phrases that mean "this is already done" — again a merged, always-on list
+  // across all five languages rather than switched by currentLang.
   const DONE_PATTERNS = [
     /已經做完了?/, /已經完成了?/, /做完了/, /完成了/, /搞定了/, /做了/,
-    /\bdone\b/i, /\bfinished\b/i, /\bcompleted\b/i
+    /\bdone\b/i, /\bfinished\b/i, /\bcompleted\b/i,
+    /완료(?:함|했음|됨)?/, /끝냄/, /끝났음/,
+    /\bhecho\b/i, /\bterminado\b/i, /\bcompletado\b/i, /\blisto\b/i
   ];
 
   // Fallback: in Chinese, "<verb>了" (投遞了, 去了, 交了…) almost always marks a
   // completed action in a quick note, even when it's not one of the specific
   // phrases above. Skipped on clearly-negated sentences, and excludes "了" that's
   // really part of another word (了解/了不起) or a question particle (了嗎/了吧).
-  // Also used to hold back the "past date defaults to done" rule below.
-  const NEGATION_HINT = /還沒|還没|沒有|尚未|未完成|待辦|待做|還要|尚待|有待|需要|打算/;
+  // Also used to hold back the "past date defaults to done" rule below. This
+  // generic catch-all is Chinese-specific (it leans on "了" as a grammatical
+  // completion particle) — English/Korean/Spanish don't have an equivalent
+  // single marker, so those rely on the explicit DONE_PATTERNS list above instead.
+  const NEGATION_HINT = /還沒|還没|沒有|尚未|未完成|待辦|待做|還要|尚待|有待|需要|打算|\bnot yet\b|\bhaven'?t\b|\bneed to\b|\bplan(?:ning)? to\b|\bpending\b|아직|못\s*함|안\s*함|예정|해야|필요|\btodavía no\b|\baún no\b|\bpendiente\b|\bfalta\b|\bnecesito\b|\bvoy a\b/i;
   const GENERIC_DONE_PATTERN = /[一-龥]{1,4}了(?!解|不起|嗎|吧|不成)/;
 
   function offsetDaysBetween(targetDate) {
@@ -2399,10 +2417,17 @@ window.initApp = function () {
     }
 
     for (const [word, offset] of DATE_WORDS) {
-      const idx = signal.indexOf(word);
+      let idx = -1, matchLen = 0;
+      if (word instanceof RegExp) {
+        const m = signal.match(word);
+        if (m) { idx = m.index; matchLen = m[0].length; }
+      } else {
+        idx = signal.indexOf(word);
+        matchLen = word.length;
+      }
       if (idx !== -1) {
         dateOffset = offset;
-        signal = signal.slice(0, idx) + signal.slice(idx + word.length);
+        signal = signal.slice(0, idx) + signal.slice(idx + matchLen);
         matchedDate = true;
         break;
       }
@@ -2418,6 +2443,87 @@ window.initApp = function () {
         if (targetDate) {
           dateOffset = offsetDaysBetween(targetDate);
           signal = signal.slice(0, absMatch.index) + signal.slice(absMatch.index + absMatch[0].length);
+          matchedDate = true;
+        }
+      }
+    }
+
+    if (!matchedDate) {
+      // Korean "M월 D일" or "YYYY년 M월 D일" — same shape as the Chinese pattern above.
+      const koMatch = signal.match(/(?:(\d{4})년\s*)?(\d{1,2})월\s*(\d{1,2})일/);
+      if (koMatch) {
+        const year = koMatch[1] ? parseInt(koMatch[1], 10) : null;
+        const month = parseInt(koMatch[2], 10);
+        const day = parseInt(koMatch[3], 10);
+        const targetDate = resolveDate(year, month, day);
+        if (targetDate) {
+          dateOffset = offsetDaysBetween(targetDate);
+          signal = signal.slice(0, koMatch.index) + signal.slice(koMatch.index + koMatch[0].length);
+          matchedDate = true;
+        }
+      }
+    }
+
+    if (!matchedDate) {
+      // ISO "YYYY-MM-DD" — unambiguous, so it's recognized no matter which
+      // language you're typing in.
+      const isoMatch = signal.match(/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/);
+      if (isoMatch) {
+        const year = parseInt(isoMatch[1], 10);
+        const month = parseInt(isoMatch[2], 10);
+        const day = parseInt(isoMatch[3], 10);
+        const targetDate = resolveDate(year, month, day);
+        if (targetDate) {
+          dateOffset = offsetDaysBetween(targetDate);
+          signal = signal.slice(0, isoMatch.index) + signal.slice(isoMatch.index + isoMatch[0].length);
+          matchedDate = true;
+        }
+      }
+    }
+
+    if (!matchedDate) {
+      // English "Month D[, Year]" e.g. "July 9" / "July 9th, 2026".
+      const enMatch = signal.match(/\b(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s*(\d{4}))?\b/i);
+      if (enMatch) {
+        const month = MONTH_NAMES_EN[enMatch[1].toLowerCase()];
+        const day = parseInt(enMatch[2], 10);
+        const year = enMatch[3] ? parseInt(enMatch[3], 10) : null;
+        const targetDate = resolveDate(year, month, day);
+        if (targetDate) {
+          dateOffset = offsetDaysBetween(targetDate);
+          signal = signal.slice(0, enMatch.index) + signal.slice(enMatch.index + enMatch[0].length);
+          matchedDate = true;
+        }
+      }
+    }
+
+    if (!matchedDate) {
+      // English "D Month[, Year]" e.g. "9 July" / "9th July 2026".
+      const enMatch2 = signal.match(/\b(\d{1,2})(?:st|nd|rd|th)?\s+(january|february|march|april|may|june|july|august|september|october|november|december)(?:,?\s*(\d{4}))?\b/i);
+      if (enMatch2) {
+        const day = parseInt(enMatch2[1], 10);
+        const month = MONTH_NAMES_EN[enMatch2[2].toLowerCase()];
+        const year = enMatch2[3] ? parseInt(enMatch2[3], 10) : null;
+        const targetDate = resolveDate(year, month, day);
+        if (targetDate) {
+          dateOffset = offsetDaysBetween(targetDate);
+          signal = signal.slice(0, enMatch2.index) + signal.slice(enMatch2.index + enMatch2[0].length);
+          matchedDate = true;
+        }
+      }
+    }
+
+    if (!matchedDate) {
+      // Spanish "D de Month[ de Year]" e.g. "9 de julio" / "9 de julio de 2026".
+      const esMatch = signal.match(/\b(\d{1,2})\s+de\s+(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)(?:\s+de\s+(\d{4}))?\b/i);
+      if (esMatch) {
+        const day = parseInt(esMatch[1], 10);
+        const month = MONTH_NAMES_ES[esMatch[2].toLowerCase()];
+        const year = esMatch[3] ? parseInt(esMatch[3], 10) : null;
+        const targetDate = resolveDate(year, month, day);
+        if (targetDate) {
+          dateOffset = offsetDaysBetween(targetDate);
+          signal = signal.slice(0, esMatch.index) + signal.slice(esMatch.index + esMatch[0].length);
           matchedDate = true;
         }
       }
@@ -2440,16 +2546,26 @@ window.initApp = function () {
       }
     }
 
-    for (const pat of DONE_PATTERNS) {
-      const m = signal.match(pat);
-      if (m) {
-        done = true;
-        signal = signal.slice(0, m.index) + signal.slice(m.index + m[0].length);
-        break;
+    // Checked once, up front: the Chinese explicit markers (做了/完成了…) never
+    // naturally co-occur with a negation word in real usage (Chinese grammar
+    // doesn't produce "還沒完成了"), so this was implicitly safe before. But
+    // English "not yet finished" / "haven't done" absolutely do contain a
+    // DONE_PATTERNS keyword ("finished"/"done") despite meaning the opposite —
+    // so negation now gates the explicit list too, not just the fuzzy fallback.
+    const hasNegation = NEGATION_HINT.test(signal);
+
+    if (!hasNegation) {
+      for (const pat of DONE_PATTERNS) {
+        const m = signal.match(pat);
+        if (m) {
+          done = true;
+          signal = signal.slice(0, m.index) + signal.slice(m.index + m[0].length);
+          break;
+        }
       }
     }
 
-    if (!done && !NEGATION_HINT.test(signal)) {
+    if (!done && !hasNegation) {
       const m = signal.match(GENERIC_DONE_PATTERN);
       if (m) {
         done = true;
@@ -2459,7 +2575,7 @@ window.initApp = function () {
 
     // A note pinned to a past date, with no "still open" language, is a journal
     // entry about something that already happened — default it to done.
-    if (!done && matchedDate && dateOffset < 0 && !NEGATION_HINT.test(signal)) {
+    if (!done && matchedDate && dateOffset < 0 && !hasNegation) {
       done = true;
     }
 
