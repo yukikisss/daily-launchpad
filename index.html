@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今日啟動台</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 90px;
+    background: #FAFAF8;
+    color: #2E2C27;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Microsoft JhengHei", "Segoe UI", sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; }
+  .date-line { color: #8A8878; font-size: 13px; margin-bottom: 4px; }
+  h1 { font-size: 22px; margin: 0 0 6px; font-weight: 700; }
+  .greeting { color: #6B6A63; font-size: 14px; margin: 0 0 20px; }
+
+  /* Top area: main column (date/title/hero) + routine panel side by side */
+  .top-row { display: flex; gap: 20px; align-items: flex-start; }
+  /* Fixed at 640px (not flex:1) so the hero card lines up exactly with the
+     "隨手記錄" capture card and journal below it, instead of shrinking to
+     whatever space is left next to the routine panel. */
+  .top-main { flex: 0 0 640px; width: 640px; max-width: 640px; min-width: 0; }
+  .routine-panel {
+    width: 260px;
+    flex-shrink: 0;
+    background: #FFFFFF;
+    border: 1px solid #E9E8E1;
+    border-radius: 14px;
+    padding: 16px 16px 14px;
+  }
+  .routine-heading { font-size: 14px; font-weight: 700; margin: 0 0 4px; color: #2E2C27; }
+  .routine-progress { font-size: 12px; color: #8A8878; margin-bottom: 10px; }
+  .routine-list { list-style: none; padding: 0; margin: 0 0 10px; }
+  .routine-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #F1F0EA;
+    font-size: 13px;
+  }
+  .routine-item:last-child { border-bottom: none; }
+  .routine-item input[type="checkbox"] { accent-color: #C6613F; cursor: pointer; flex-shrink: 0; }
+  .routine-text { flex: 1; word-break: break-word; }
+  .routine-item.done .routine-text { color: #ABA998; text-decoration: line-through; }
+  .routine-del {
+    background: none; border: none; color: #C7C5B8; cursor: pointer;
+    font-size: 15px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+  }
+  .routine-del:hover { color: #C6613F; }
+  .routine-empty { color: #ABA998; font-size: 12px; padding: 4px 0 10px; }
+  .routine-add-row { display: flex; gap: 6px; }
+  #routineInput {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 9px;
+    border: 1px solid #DEDCD2;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+  }
+  #routineInput:focus { border-color: #C6613F; }
+  #routineAddBtn {
+    background: #C6613F;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 13px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #routineAddBtn:hover { background: #AE5133; }
+
+  @media (max-width: 760px) {
+    .top-row { flex-direction: column; }
+    .top-main { flex-basis: auto; width: 100%; max-width: 100%; }
+    .routine-panel { width: 100%; }
+  }
+
+  /* Resume hero */
+  .hero {
+    background: #FFF6F1;
+    border: 1px solid #F0D9C8;
+    border-radius: 14px;
+    padding: 20px 20px 18px;
+    margin-bottom: 24px;
+  }
+  .hero-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #C6613F;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+  }
+  .hero-empty { color: #8A8878; font-size: 14px; }
+  .hero-row { margin-bottom: 10px; }
+  .hero-row:last-child { margin-bottom: 0; }
+  .hero-tag { font-size: 12px; color: #8A8878; margin-bottom: 2px; }
+  .hero-text { font-size: 15px; color: #2E2C27; }
+  .hero-action {
+    font-size: 17px;
+    font-weight: 700;
+    color: #2E2C27;
+    background: #FFFFFF;
+    border: 1px solid #F0D9C8;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .hero-start-btn {
+    display: block;
+    margin-top: 8px;
+    background: #C6613F;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .hero-start-btn:hover { background: #AE5133; }
+  .hero-meta { font-size: 12px; color: #ABA998; margin-top: 10px; }
+  .hero-todo-group { margin-top: 12px; }
+  .hero-todo-group:first-of-type { margin-top: 6px; }
+  .hero-todo-heading {
+    font-size: 12px;
+    font-weight: 700;
+    color: #C6613F;
+    margin-bottom: 4px;
+  }
+  .hero-todo-list { list-style: none; padding: 0; margin: 0; }
+  .hero-todo-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 4px;
+    border-bottom: 1px solid #F0D9C8;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: grab;
+  }
+  .hero-todo-item:last-child { border-bottom: none; }
+  .hero-todo-item:active { cursor: grabbing; }
+  .hero-todo-item.dragging { opacity: 0.35; }
+  .hero-todo-item.drop-target { background: #FBEAE0; }
+  .hero-drag-handle {
+    color: #DEC3B3;
+    font-size: 13px;
+    flex-shrink: 0;
+    user-select: none;
+    line-height: 1;
+  }
+  .hero-todo-item input[type="checkbox"] { accent-color: #C6613F; cursor: pointer; flex-shrink: 0; }
+  .hero-unfinished-text {
+    flex: 1;
+    color: #2E2C27;
+    word-break: break-word;
+    cursor: text;
+    padding: 2px 4px;
+    border-radius: 5px;
+  }
+  .hero-unfinished-text:hover { background: #fff; }
+  .hero-unfinished-date { font-size: 11px; color: #ABA998; flex-shrink: 0; }
+  .hero-todo-del {
+    background: none; border: none; color: #DEC3B3; cursor: pointer;
+    font-size: 16px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+  }
+  .hero-todo-del:hover { color: #C6613F; }
+
+  /* Capture box */
+  .card {
+    background: #FFFFFF;
+    border: 1px solid #E9E8E1;
+    border-radius: 14px;
+    padding: 18px 18px 16px;
+    margin-bottom: 20px;
+    max-width: 640px;
+  }
+  .card h2 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: #2E2C27;
+  }
+  .capture-row { display: flex; gap: 8px; }
+  #captureInput {
+    flex: 1;
+    min-width: 140px;
+    padding: 11px 12px;
+    border: 1px solid #DEDCD2;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+  }
+  #captureInput:focus { border-color: #C6613F; }
+  #addBtn {
+    background: #C6613F;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #addBtn:hover { background: #AE5133; }
+  .capture-hint {
+    font-size: 12px;
+    color: #ABA998;
+    margin-top: 7px;
+  }
+
+  /* Journal list: date sections */
+  .item-list { margin-top: 18px; }
+  .date-section { margin-bottom: 20px; }
+  .date-section:last-child { margin-bottom: 0; }
+  .date-section-label {
+    font-size: 13px;
+    font-weight: 700;
+    color: #C6613F;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #F1F0EA;
+  }
+  details.date-details {
+    margin-bottom: 20px;
+    border-bottom: 1px solid #F1F0EA;
+    padding-bottom: 4px;
+  }
+  details.date-details:last-child { margin-bottom: 0; }
+  details.date-details summary {
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 700;
+    color: #6B6A63;
+    padding: 4px 0 8px;
+    list-style: none;
+  }
+  details.date-details summary::-webkit-details-marker { display: none; }
+  details.date-details summary::before { content: "▸  "; color: #ABA998; }
+  details.date-details[open] summary::before { content: "▾  "; }
+
+  .cat-group { margin-bottom: 12px; }
+  .cat-group:last-child { margin-bottom: 0; }
+  .cat-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #8A8878;
+    margin: 0 0 4px;
+  }
+  .date-section .cat-header { color: #C6613F; }
+  .item-list-inner { list-style: none; padding: 0; margin: 0; }
+  .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #F1F0EA;
+  }
+  .item-list-inner li.item:last-child { border-bottom: none; }
+  .item input[type="checkbox"] { accent-color: #C6613F; cursor: pointer; flex-shrink: 0; }
+  .item-text {
+    flex: 1;
+    font-size: 14px;
+    word-break: break-word;
+    cursor: text;
+    padding: 3px 4px;
+    border-radius: 5px;
+  }
+  .item-text:hover { background: #FAFAF8; }
+  .item.done .item-text { color: #ABA998; text-decoration: line-through; }
+  .item-edit-input {
+    flex: 1;
+    font-size: 14px;
+    font-family: inherit;
+    padding: 3px 5px;
+    border: 1px solid #C6613F;
+    border-radius: 5px;
+    outline: none;
+    background: #fff;
+  }
+  .item-del {
+    background: none; border: none; color: #C7C5B8; cursor: pointer;
+    font-size: 16px; line-height: 1; padding: 2px 4px; flex-shrink: 0;
+  }
+  .item-del:hover { color: #C6613F; }
+  .empty-note { color: #ABA998; font-size: 13px; padding: 6px 0; }
+
+  /* Attachments — only renders when a file is actually attached */
+  .attach-badge {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+    max-width: 130px;
+  }
+  .attach-open {
+    background: #FAFAF8;
+    border: 1px solid #E9E8E1;
+    color: #6B6A63;
+    border-radius: 6px;
+    font-size: 11px;
+    padding: 2px 6px;
+    cursor: pointer;
+    max-width: 110px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .attach-open:hover { border-color: #C6613F; color: #C6613F; }
+  .attach-remove {
+    background: none; border: none; color: #C7C5B8; cursor: pointer;
+    font-size: 14px; line-height: 1; padding: 0 2px; flex-shrink: 0;
+  }
+  .attach-remove:hover { color: #C6613F; }
+
+  /* Toast — quiet feedback for things like an over-size attachment, no native alert() */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(12px);
+    background: #2E2C27;
+    color: #fff;
+    font-size: 13px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(46,44,39,0.25);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 30;
+    max-width: 320px;
+    text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Shutdown button — fixed in place so it's always reachable, even once the
+     journal below has months of history to scroll through. */
+  #shutdownBtn {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 20;
+    background: #2E2C27;
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 13px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(46,44,39,0.25);
+  }
+  #shutdownBtn:hover { background: #46433c; }
+
+  /* History */
+  details.history { max-width: 640px; }
+  details.history summary {
+    cursor: pointer;
+    font-size: 13px;
+    color: #8A8878;
+    font-weight: 600;
+    padding: 6px 0;
+  }
+  .history-entry {
+    padding: 10px 0;
+    border-bottom: 1px solid #F1F0EA;
+  }
+  .history-entry:last-child { border-bottom: none; }
+  .history-date { font-size: 12px; color: #ABA998; margin-bottom: 3px; }
+  .history-stuck { font-size: 13px; color: #6B6A63; margin-bottom: 3px; }
+  .history-action { font-size: 13px; color: #2E2C27; font-weight: 600; }
+
+  /* Modal */
+  .overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(46,44,39,0.45);
+    align-items: center; justify-content: center;
+    padding: 16px;
+    z-index: 10;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 22px 22px 18px;
+    max-width: 460px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+  }
+  .modal h3 { margin: 0 0 4px; font-size: 17px; }
+  .modal .sub { font-size: 13px; color: #8A8878; margin-bottom: 16px; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field .hint { font-weight: 400; color: #ABA998; }
+  .field textarea, .field input[type="text"] {
+    width: 100%;
+    padding: 10px 11px;
+    border: 1px solid #DEDCD2;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+  }
+  .field textarea:focus, .field input:focus { border-color: #C6613F; }
+  .leftover-preview {
+    background: #FAFAF8;
+    border: 1px solid #EFEEE7;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #6B6A63;
+    margin-bottom: 14px;
+  }
+  .leftover-preview div { padding: 2px 0; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+  .btn-secondary {
+    background: #F1F0EA; color: #6B6A63; border: none;
+    border-radius: 8px; padding: 9px 16px; font-size: 13px; cursor: pointer;
+  }
+  .btn-primary {
+    background: #C6613F; color: #fff; border: none;
+    border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-primary:hover { background: #AE5133; }
+
+  /* Journal drag-to-recategorize */
+  .item-drag-handle {
+    color: #DEC3B3;
+    font-size: 13px;
+    flex-shrink: 0;
+    user-select: none;
+    line-height: 1;
+    cursor: grab;
+  }
+  .item.dragging { opacity: 0.35; }
+  .item-list-inner.drop-target-list { background: #FBEAE0; border-radius: 6px; }
+  .cat-group.drag-ghost .cat-header { opacity: 0.55; }
+  .cat-group.drag-ghost .item-list-inner { min-height: 26px; border: 1px dashed #E9E8E1; border-radius: 6px; }
+
+  /* Right-click context menu: attachments + fixing a wrong category */
+  .context-menu {
+    position: fixed;
+    display: none;
+    background: #fff;
+    border: 1px solid #E9E8E1;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(46,44,39,0.18);
+    padding: 4px;
+    z-index: 40;
+    min-width: 170px;
+    max-width: 220px;
+  }
+  .context-menu-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 8px 10px;
+    font-size: 13px;
+    color: #2E2C27;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+  .context-menu-item:hover { background: #FAFAF8; }
+  .context-menu-divider { height: 1px; background: #F1F0EA; margin: 4px 2px; }
+  .context-menu-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #ABA998;
+    padding: 4px 10px 2px;
+  }
+  .context-menu-cats { max-height: 160px; overflow-y: auto; }
+  .context-menu-newcat-row {
+    display: flex;
+    gap: 4px;
+    padding: 4px 6px 2px;
+  }
+  .context-menu-newcat-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 7px;
+    border: 1px solid #DEDCD2;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+  }
+  .context-menu-newcat-row input:focus { border-color: #C6613F; }
+  .context-menu-newcat-row button {
+    background: #C6613F;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .context-menu-newcat-row button:hover { background: #AE5133; }
+
+  /* Optional attachment on a new capture, staged before it's added */
+  .attach-new-btn {
+    background: #fff;
+    border: 1px solid #DEDCD2;
+    color: #8A8878;
+    border-radius: 10px;
+    width: 38px;
+    font-size: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .attach-new-btn:hover { color: #C6613F; border-color: #F0D9C8; }
+  .attach-new-btn.has-file { color: #C6613F; border-color: #F0D9C8; }
+  .new-attach-preview {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #6B6A63;
+    background: #FAFAF8;
+    border: 1px solid #EFEEE7;
+    border-radius: 8px;
+    padding: 5px 9px;
+    width: fit-content;
+  }
+  .new-attach-preview button {
+    background: none; border: none; color: #C7C5B8; cursor: pointer;
+    font-size: 14px; line-height: 1; padding: 0 2px;
+  }
+  .new-attach-preview button:hover { color: #C6613F; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="date-line" id="dateLine"></div>
+  <h1>今日啟動台</h1>
+  <div class="greeting" id="greeting"></div>
+
+  <div class="top-row">
+    <div class="top-main">
+      <div class="hero" id="heroCard"></div>
+    </div>
+
+    <div class="routine-panel">
+      <h2 class="routine-heading">每日例行</h2>
+      <div class="routine-progress" id="routineProgress"></div>
+      <ul class="routine-list" id="routineList"></ul>
+      <div class="routine-add-row">
+        <input id="routineInput" type="text" placeholder="新增例行事項…" />
+        <button id="routineAddBtn" type="button">+</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>隨手記錄</h2>
+    <div class="capture-row">
+      <input id="captureInput" type="text" placeholder="想到什麼就丟進來，不用想格式…" />
+      <button id="newAttachBtn" class="attach-new-btn" type="button" title="附加檔案（選填）">📎</button>
+      <button id="addBtn">加入</button>
+    </div>
+    <div class="new-attach-preview" id="newAttachPreview"></div>
+    <div class="capture-hint">打 #分類名稱 會自動歸類，同時教會系統這類內容以後自動歸到這個分類；不打的話系統會用之前學到的規則自動猜分類，猜錯了就在項目旁邊改一次，它會記住。打「今天/昨天/前天」或「7月9號」這種日期，加上「做了、完成了、done」，會自動判斷完成狀態和放到哪一天，例如「7月9號投遞了6份工作」。</div>
+    <div class="item-list" id="itemList"></div>
+  </div>
+
+  <details class="history">
+    <summary>查看過去的收尾紀錄</summary>
+    <div id="historyList" style="margin-top:8px;"></div>
+  </details>
+</div>
+
+<button id="shutdownBtn">結束今天</button>
+
+<input type="file" id="attachFileInput" style="display:none" />
+<input type="file" id="newAttachFileInput" style="display:none" />
+<div class="toast" id="toast"></div>
+
+<div class="context-menu" id="contextMenu">
+  <button class="context-menu-item" id="ctxAttachBtn" type="button"></button>
+  <button class="context-menu-item" id="ctxRemoveBtn" type="button" style="display:none;">🗑 移除附件</button>
+  <div class="context-menu-divider"></div>
+  <div class="context-menu-label">改分類</div>
+  <div class="context-menu-cats" id="ctxCategoryList"></div>
+  <button class="context-menu-item" id="ctxNewCatToggle" type="button">+ 新增分類…</button>
+  <div class="context-menu-newcat-row" id="ctxNewCatRow" style="display:none;">
+    <input type="text" id="ctxNewCatInput" placeholder="新分類名稱" />
+    <button id="ctxNewCatConfirm" type="button">加</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h3>收尾一下</h3>
+    <div class="sub">三格就好，寫完明天打開就知道從哪裡開始。</div>
+
+    <div class="field">
+      <label>現在卡在哪裡</label>
+      <textarea id="stuckInput" rows="2" placeholder="例如：報告寫到第二段的資料分析，數字還沒核對完"></textarea>
+    </div>
+
+    <div class="field">
+      <label>下一步的第一個動作 <span class="hint">（小到 5 分鐘內能做完）</span></label>
+      <input id="actionInput" type="text" placeholder="例如：打開檔案，核對表三的數字" />
+    </div>
+
+    <div class="field" id="leftoverField" style="display:none;">
+      <label>今天還沒打勾的記錄</label>
+      <div class="leftover-preview" id="leftoverPreview"></div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="cancelBtn">取消</button>
+      <button class="btn-primary" id="saveBtn">儲存並結束</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const LS_CAPTURES = "qc_captures_v1";
+  const LS_HISTORY = "qc_history_v1";
+  const LS_CATEGORIES = "qc_categories_v1";
+  const LS_CAT_KEYWORDS = "qc_cat_keywords_v1";
+  const LS_ROUTINES = "qc_routines_v1";
+  const LS_ROUTINE_LOG = "qc_routine_log_v1";
+  const DEFAULT_CATEGORY = "未分類";
+  const MAX_DAYS_SHOWN = 30;
+
+  // For night-owl work sessions: anything before this hour still counts as
+  // "yesterday" — so a late-night or early-morning "結束今天" (or a capture with
+  // no date word) lands on the day the session actually started, not the new
+  // calendar date that quietly rolled over at midnight.
+  const DAY_CUTOFF_HOUR = 4;
+
+  function effectiveNow() {
+    const now = new Date();
+    if (now.getHours() < DAY_CUTOFF_HOUR) {
+      now.setDate(now.getDate() - 1);
+    }
+    return now;
+  }
+
+  const todayKey = () => {
+    const d = effectiveNow();
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  };
+
+  const weekday = ["週日","週一","週二","週三","週四","週五","週六"];
+  function formatDateLine(d) {
+    d = d || effectiveNow();
+    return `${d.getFullYear()}.${d.getMonth()+1}.${d.getDate()} ・ ${weekday[d.getDay()]}`;
+  }
+  function dateFromKey(key) {
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function loadCaptures() {
+    try { return JSON.parse(localStorage.getItem(LS_CAPTURES) || "{}"); }
+    catch (e) { return {}; }
+  }
+  function saveCaptures(obj) {
+    localStorage.setItem(LS_CAPTURES, JSON.stringify(obj));
+  }
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(LS_HISTORY) || "[]"); }
+    catch (e) { return []; }
+  }
+  function saveHistory(arr) {
+    localStorage.setItem(LS_HISTORY, JSON.stringify(arr));
+  }
+  function loadCategories() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_CATEGORIES) || "null");
+      if (Array.isArray(raw) && raw.length) return raw;
+    } catch (e) {}
+    return [DEFAULT_CATEGORY];
+  }
+  function saveCategories(arr) {
+    localStorage.setItem(LS_CATEGORIES, JSON.stringify(arr));
+  }
+  function loadCatKeywords() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_CAT_KEYWORDS) || "null");
+      if (raw && typeof raw === "object") return raw;
+    } catch (e) {}
+    return {};
+  }
+  function saveCatKeywords(obj) {
+    localStorage.setItem(LS_CAT_KEYWORDS, JSON.stringify(obj));
+  }
+  function loadRoutines() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_ROUTINES) || "[]");
+      if (Array.isArray(raw)) return raw;
+    } catch (e) {}
+    return [];
+  }
+  function saveRoutines(arr) {
+    localStorage.setItem(LS_ROUTINES, JSON.stringify(arr));
+  }
+  function loadRoutineLog() {
+    try {
+      const raw = JSON.parse(localStorage.getItem(LS_ROUTINE_LOG) || "{}");
+      if (raw && typeof raw === "object") return raw;
+    } catch (e) {}
+    return {};
+  }
+  function saveRoutineLog(obj) {
+    localStorage.setItem(LS_ROUTINE_LOG, JSON.stringify(obj));
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  // Attachments live inline on the item itself (it.attachment = { name, type,
+  // size, dataUrl }), stored as a base64 data URL since there's no server to
+  // upload to — just the browser's localStorage. That caps how big a file can
+  // reasonably go here, so this stays sized for reference docs, not big binaries.
+  const MAX_ATTACHMENT_BYTES = 2 * 1024 * 1024; // 2MB
+
+  function truncateName(name, max) {
+    max = max || 16;
+    if (!name || name.length <= max) return name || "";
+    const dot = name.lastIndexOf(".");
+    const ext = dot > -1 ? name.slice(dot) : "";
+    const base = dot > -1 ? name.slice(0, dot) : name;
+    const keep = Math.max(3, max - ext.length - 1);
+    return base.slice(0, keep) + "…" + ext;
+  }
+
+  let toastTimer = null;
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 4000);
+  }
+
+  // Only renders anything when an attachment actually exists — no icon clutter
+  // on plain items. Adding one for the first time happens via the + next to the
+  // capture box (new items) or right-click (existing items).
+  function attachmentHtml(it) {
+    if (!it.attachment) return "";
+    return `
+      <span class="attach-badge">
+        <button class="attach-open" data-id="${it.id}" data-date="${it._dateKey}" title="${escapeHtml(it.attachment.name)}">📎 ${escapeHtml(truncateName(it.attachment.name))}</button>
+        <button class="attach-remove" data-id="${it.id}" data-date="${it._dateKey}" title="移除附件">×</button>
+      </span>
+    `;
+  }
+
+  let pendingAttachTarget = null;
+
+  function openAttachPicker(id, dateKey) {
+    pendingAttachTarget = { id, dateKey };
+    const input = document.getElementById("attachFileInput");
+    input.value = "";
+    input.click();
+  }
+
+  document.getElementById("attachFileInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    const target = pendingAttachTarget;
+    pendingAttachTarget = null;
+    if (!file || !target) return;
+
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      showToast(`檔案太大了（${(file.size / 1024 / 1024).toFixed(1)}MB），先支援 2MB 以內的檔案`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const it = (captures[target.dateKey] || []).find(x => x.id === target.id);
+      if (!it) return;
+      const previous = it.attachment;
+      it.attachment = { name: file.name, type: file.type, size: file.size, dataUrl: reader.result };
+      try {
+        saveCaptures(captures);
+      } catch (err) {
+        it.attachment = previous;
+        showToast("儲存失敗，可能是空間不足了，換個更小的檔案試試");
+        return;
+      }
+      renderHero();
+      renderItems();
+    };
+    reader.onerror = () => showToast("讀取檔案失敗，再試一次看看");
+    reader.readAsDataURL(file);
+  });
+
+  // Rebuild the stored data URL into a real Blob so this triggers a download
+  // instead of navigating to a data: URL directly (which sandboxed views tend to block).
+  function downloadAttachment(attachment) {
+    try {
+      const [meta, base64] = attachment.dataUrl.split(",");
+      const mimeMatch = meta.match(/data:(.*?);base64/);
+      const mime = mimeMatch ? mimeMatch[1] : (attachment.type || "application/octet-stream");
+      const byteChars = atob(base64);
+      const byteNumbers = new Array(byteChars.length);
+      for (let i = 0; i < byteChars.length; i++) byteNumbers[i] = byteChars.charCodeAt(i);
+      const blob = new Blob([new Uint8Array(byteNumbers)], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = attachment.name || "attachment";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (e) {
+      showToast("打不開這個附件");
+    }
+  }
+
+  // Right-click menu on any journal or "Start Here" item — done or not —
+  // covers both attachments (add/replace/remove) and fixing a wrong category,
+  // without needing a permanent control on every row.
+  let ctxTarget = null;
+
+  function showContextMenu(x, y, id, dateKey, item) {
+    ctxTarget = { id, dateKey };
+    const hasAttachment = !!(item && item.attachment);
+    const currentCategory = (item && item.category) || DEFAULT_CATEGORY;
+    const menu = document.getElementById("contextMenu");
+    document.getElementById("ctxAttachBtn").textContent = hasAttachment ? "📎 更換附件" : "📎 新增附件";
+    document.getElementById("ctxRemoveBtn").style.display = hasAttachment ? "block" : "none";
+    document.getElementById("ctxNewCatRow").style.display = "none";
+    document.getElementById("ctxNewCatInput").value = "";
+    renderCtxCategoryList(currentCategory);
+    menu.style.display = "block";
+    // Position after it's visible so its real size is known, then keep it on-screen.
+    const rect = menu.getBoundingClientRect();
+    menu.style.left = Math.max(4, Math.min(x, window.innerWidth - rect.width - 4)) + "px";
+    menu.style.top = Math.max(4, Math.min(y, window.innerHeight - rect.height - 4)) + "px";
+  }
+  function hideContextMenu() {
+    document.getElementById("contextMenu").style.display = "none";
+    ctxTarget = null;
+  }
+  document.addEventListener("click", hideContextMenu);
+  document.addEventListener("scroll", hideContextMenu, true);
+  document.getElementById("ctxAttachBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (ctxTarget) openAttachPicker(ctxTarget.id, ctxTarget.dateKey);
+    hideContextMenu();
+  });
+  document.getElementById("ctxRemoveBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (ctxTarget) {
+      const it = (captures[ctxTarget.dateKey] || []).find(x => x.id === ctxTarget.id);
+      if (it) {
+        delete it.attachment;
+        saveCaptures(captures);
+        renderHero();
+        renderItems();
+      }
+    }
+    hideContextMenu();
+  });
+
+  // Reassigns the right-clicked item to a different category — the same
+  // unlearn-old/learn-new logic as dragging it into a different group.
+  function applyCtxCategoryChange(newCategory) {
+    if (!ctxTarget || !newCategory) return;
+    const it = (captures[ctxTarget.dateKey] || []).find(x => x.id === ctxTarget.id);
+    if (it) {
+      const oldCategory = it.category || DEFAULT_CATEGORY;
+      ensureCategory(newCategory);
+      if (newCategory !== oldCategory) {
+        const tokens = tokenize(it.text);
+        updateCatKeywords(oldCategory, tokens, -1);
+        updateCatKeywords(newCategory, tokens, 1);
+        it.category = newCategory;
+        saveCaptures(captures);
+        renderHero();
+        renderItems();
+      }
+    }
+    hideContextMenu();
+  }
+
+  function renderCtxCategoryList(currentCategory) {
+    const listEl = document.getElementById("ctxCategoryList");
+    listEl.innerHTML = categories.map(c => `
+      <button class="context-menu-item ctx-cat-item" data-cat="${escapeHtml(c)}">${c === currentCategory ? "✓ " : ""}${escapeHtml(c)}</button>
+    `).join("");
+    listEl.querySelectorAll(".ctx-cat-item").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        applyCtxCategoryChange(btn.getAttribute("data-cat"));
+      });
+    });
+  }
+
+  document.getElementById("ctxNewCatToggle").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("ctxNewCatRow").style.display = "flex";
+    document.getElementById("ctxNewCatInput").focus();
+  });
+  document.getElementById("ctxNewCatRow").addEventListener("click", (e) => e.stopPropagation());
+  document.getElementById("ctxNewCatConfirm").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const input = document.getElementById("ctxNewCatInput");
+    const name = input.value.trim();
+    if (name) applyCtxCategoryChange(name);
+  });
+  document.getElementById("ctxNewCatInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); document.getElementById("ctxNewCatConfirm").click(); }
+    if (e.key === "Escape") { document.getElementById("ctxNewCatRow").style.display = "none"; }
+  });
+
+  let captures = loadCaptures();
+  let history = loadHistory();
+  let categories = loadCategories();
+  let catKeywords = loadCatKeywords(); // { category: { token: weight } } — learned from confirmed/corrected tags
+  let routines = loadRoutines(); // [{ id, text, createdAt }] — the recurring checklist itself
+  let routineLog = loadRoutineLog(); // { dateKey: { routineId: true } } — which routines were checked off, per day
+  const tk = todayKey();
+  if (!captures[tk]) captures[tk] = [];
+  const openDates = new Set(); // which past-date <details> are expanded, kept across re-renders
+
+  function dateKeyWithOffset(offset) {
+    const d = effectiveNow();
+    d.setDate(d.getDate() + offset);
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+
+  // Split text into matchable tokens: whole English/number words, plus Chinese
+  // runs (short runs kept whole, longer runs also broken into character bigrams
+  // so partial overlaps like "客戶資料" vs "客戶" still connect).
+  function tokenize(text) {
+    const tokens = [];
+    const enMatches = text.toLowerCase().match(/[a-z0-9]+/g);
+    if (enMatches) tokens.push(...enMatches);
+    const hanziRuns = text.match(/[一-龥]+/g);
+    if (hanziRuns) {
+      hanziRuns.forEach(run => {
+        if (run.length <= 4) tokens.push(run);
+        for (let i = 0; i < run.length - 1; i++) tokens.push(run.slice(i, i + 2));
+      });
+    }
+    return tokens;
+  }
+
+  // Nudge a category's keyword weights up (direction 1) or down (direction -1).
+  // Called on deliberate signals only: an explicit #tag, or a manual category
+  // correction — never on an unconfirmed guess, so it can't reinforce its own mistakes.
+  function updateCatKeywords(category, tokens, direction) {
+    if (!tokens.length || !category) return;
+    if (!catKeywords[category]) catKeywords[category] = {};
+    tokens.forEach(t => {
+      const next = (catKeywords[category][t] || 0) + direction;
+      if (next <= 0) delete catKeywords[category][t];
+      else catKeywords[category][t] = next;
+    });
+    if (Object.keys(catKeywords[category]).length === 0) delete catKeywords[category];
+    saveCatKeywords(catKeywords);
+  }
+
+  // Guess a category for un-tagged text from previously learned keyword weights.
+  // Never guesses into 未分類 itself — that's the fallback when nothing matches.
+  function guessCategory(tokens) {
+    if (!tokens.length) return null;
+    let best = null, bestScore = 0;
+    Object.keys(catKeywords).forEach(cat => {
+      if (cat === DEFAULT_CATEGORY) return;
+      const table = catKeywords[cat];
+      let score = 0;
+      tokens.forEach(t => { if (table[t]) score += table[t]; });
+      if (score > bestScore) { bestScore = score; best = cat; }
+    });
+    return bestScore > 0 ? best : null;
+  }
+
+  // Words that place an item on a past day instead of today. Checked longest-first
+  // so "大前天" isn't swallowed by a "前天" partial match.
+  const DATE_WORDS = [["大前天", -3], ["前天", -2], ["昨天", -1], ["今天", 0]];
+
+  // Phrases that mean "this is already done". Checked longest-first for the same reason.
+  const DONE_PATTERNS = [
+    /已經做完了?/, /已經完成了?/, /做完了/, /完成了/, /搞定了/, /做了/,
+    /\bdone\b/i, /\bfinished\b/i, /\bcompleted\b/i
+  ];
+
+  // Fallback: in Chinese, "<verb>了" (投遞了, 去了, 交了…) almost always marks a
+  // completed action in a quick note, even when it's not one of the specific
+  // phrases above. Skipped on clearly-negated sentences, and excludes "了" that's
+  // really part of another word (了解/了不起) or a question particle (了嗎/了吧).
+  // Also used to hold back the "past date defaults to done" rule below.
+  const NEGATION_HINT = /還沒|還没|沒有|尚未|未完成|待辦|待做|還要|尚待|有待|需要|打算/;
+  const GENERIC_DONE_PATTERN = /[一-龥]{1,4}了(?!解|不起|嗎|吧|不成)/;
+
+  function offsetDaysBetween(targetDate) {
+    const today = effectiveNow();
+    today.setHours(0, 0, 0, 0);
+    const t = new Date(targetDate);
+    t.setHours(0, 0, 0, 0);
+    return Math.round((t - today) / 86400000);
+  }
+
+  // Turns a month/day (and optional year) into a real Date. If no year is given
+  // and the month/day hasn't happened yet this year, assumes last year — "7月9號"
+  // written in a year where July 9 is still ahead of today almost always means
+  // last July 9, not next week.
+  function resolveDate(year, month, day) {
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    const now = effectiveNow();
+    const y = year || now.getFullYear();
+    let d = new Date(y, month - 1, day);
+    if (!year) {
+      const today = effectiveNow(); today.setHours(0, 0, 0, 0);
+      const cmp = new Date(d); cmp.setHours(0, 0, 0, 0);
+      if (cmp > today) d = new Date(y - 1, month - 1, day);
+    }
+    return d;
+  }
+
+  // Parse raw capture text for a "#category" tag, a date reference (今天/昨天/前天
+  // /大前天, or an explicit date like "7月9號" / "2026年7月9號" / a leading "7/9"),
+  // and a completion phrase (做了/完成了/done/finished…). These are only used as
+  // signals — the returned text is always the original wording, untouched, so a
+  // retrospective read-back still shows exactly what was typed (e.g. "剛才把
+  // nuku小紅書的進度趕上了，發布了6條" stays whole; only the detected category/
+  // date/done status are pulled out alongside it). A working copy is stripped
+  // internally purely to keep the signals from confusing each other and to
+  // build a cleaner phrase for category-guessing.
+  function parseCaptureText(raw) {
+    const originalText = raw.trim();
+    let signal = raw;
+    let category = null;
+    let done = false;
+    let dateOffset = 0;
+    let matchedDate = false;
+    // Unlike date/done words, the "#tag" itself is pure metadata syntax, not
+    // narrative content — it's the one thing that does get removed from the
+    // displayed text.
+    let displayText = originalText;
+
+    const catMatch = signal.match(/#([^\s#]{1,20})/);
+    if (catMatch) {
+      category = catMatch[1].trim();
+      signal = signal.slice(0, catMatch.index) + signal.slice(catMatch.index + catMatch[0].length);
+      const dispMatch = displayText.match(/#([^\s#]{1,20})/);
+      if (dispMatch) {
+        displayText = (displayText.slice(0, dispMatch.index) + displayText.slice(dispMatch.index + dispMatch[0].length))
+          .replace(/\s+/g, " ")
+          .trim();
+      }
+    }
+
+    for (const [word, offset] of DATE_WORDS) {
+      const idx = signal.indexOf(word);
+      if (idx !== -1) {
+        dateOffset = offset;
+        signal = signal.slice(0, idx) + signal.slice(idx + word.length);
+        matchedDate = true;
+        break;
+      }
+    }
+
+    if (!matchedDate) {
+      const absMatch = signal.match(/(?:(\d{4})年)?(\d{1,2})月(\d{1,2})[號日]/);
+      if (absMatch) {
+        const year = absMatch[1] ? parseInt(absMatch[1], 10) : null;
+        const month = parseInt(absMatch[2], 10);
+        const day = parseInt(absMatch[3], 10);
+        const targetDate = resolveDate(year, month, day);
+        if (targetDate) {
+          dateOffset = offsetDaysBetween(targetDate);
+          signal = signal.slice(0, absMatch.index) + signal.slice(absMatch.index + absMatch[0].length);
+          matchedDate = true;
+        }
+      }
+    }
+
+    if (!matchedDate) {
+      // Numeric "M/D" or "M-D" only counts when it opens the sentence, e.g. "7/9 投遞了…" —
+      // this avoids misreading unrelated fractions or ratios elsewhere in the text.
+      const slashMatch = signal.trim().match(/^(\d{1,2})[\/\-](\d{1,2})(?!\d)/);
+      if (slashMatch) {
+        const month = parseInt(slashMatch[1], 10);
+        const day = parseInt(slashMatch[2], 10);
+        const targetDate = resolveDate(null, month, day);
+        if (targetDate) {
+          dateOffset = offsetDaysBetween(targetDate);
+          const idx = signal.indexOf(slashMatch[0]);
+          signal = signal.slice(0, idx) + signal.slice(idx + slashMatch[0].length);
+          matchedDate = true;
+        }
+      }
+    }
+
+    for (const pat of DONE_PATTERNS) {
+      const m = signal.match(pat);
+      if (m) {
+        done = true;
+        signal = signal.slice(0, m.index) + signal.slice(m.index + m[0].length);
+        break;
+      }
+    }
+
+    if (!done && !NEGATION_HINT.test(signal)) {
+      const m = signal.match(GENERIC_DONE_PATTERN);
+      if (m) {
+        done = true;
+        signal = signal.slice(0, m.index) + signal.slice(m.index + m[0].length);
+      }
+    }
+
+    // A note pinned to a past date, with no "still open" language, is a journal
+    // entry about something that already happened — default it to done.
+    if (!done && matchedDate && dateOffset < 0 && !NEGATION_HINT.test(signal)) {
+      done = true;
+    }
+
+    signal = signal.replace(/\s+/g, " ").trim();
+    if (!displayText) displayText = originalText;
+
+    const categoryMatched = !!category;
+    if (!categoryMatched) {
+      const guessed = guessCategory(tokenize(signal || originalText));
+      if (guessed) category = guessed;
+    }
+
+    return {
+      text: displayText,
+      category: category || DEFAULT_CATEGORY,
+      categoryMatched,
+      categoryGuessed: !categoryMatched && !!category,
+      done,
+      dateOffset,
+      dateMatched: matchedDate
+    };
+  }
+
+  function ensureCategory(cat) {
+    if (!categories.includes(cat)) {
+      categories.push(cat);
+      saveCategories(categories);
+    }
+  }
+
+  function getAllUnfinished() {
+    const dateKeys = Object.keys(captures).sort((a, b) => b.localeCompare(a));
+    const result = [];
+    dateKeys.forEach(k => {
+      (captures[k] || []).forEach(it => {
+        if (!it.done) result.push(Object.assign({ _dateKey: k }, it));
+      });
+    });
+    return result;
+  }
+
+  // Items keep an explicit manual "priority" once dragged; anything without one
+  // falls in behind the manually-ordered items, oldest first.
+  function sortByPriority(items) {
+    return items.slice().sort((a, b) => {
+      const ap = typeof a.priority === "number";
+      const bp = typeof b.priority === "number";
+      if (ap && bp) return a.priority - b.priority;
+      if (ap && !bp) return -1;
+      if (!ap && bp) return 1;
+      return a.ts - b.ts;
+    });
+  }
+
+  function heroTodoItemHtml(it) {
+    const cat = it.category || DEFAULT_CATEGORY;
+    return `
+      <li class="hero-todo-item" draggable="true" data-id="${it.id}" data-date="${it._dateKey}" data-category="${escapeHtml(cat)}">
+        <span class="hero-drag-handle" title="拖曳排序">⠿</span>
+        <input type="checkbox" />
+        <span class="hero-unfinished-text">${escapeHtml(it.text)}</span>
+        ${it._dateKey !== tk ? `<span class="hero-unfinished-date">${escapeHtml(formatDateLine(dateFromKey(it._dateKey)))}</span>` : ""}
+        ${attachmentHtml(it)}
+        <button class="hero-todo-del" title="刪除">×</button>
+      </li>
+    `;
+  }
+
+  function unfinishedHtml() {
+    const unfinished = getAllUnfinished();
+    if (!unfinished.length) return "";
+
+    const groups = {};
+    unfinished.forEach(it => {
+      const cat = it.category || DEFAULT_CATEGORY;
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(it);
+    });
+    const orderedCats = [
+      ...categories.filter(c => groups[c]),
+      ...Object.keys(groups).filter(c => !categories.includes(c))
+    ];
+
+    const groupsMarkup = orderedCats.map(cat => `
+      <div class="hero-todo-group">
+        <div class="hero-todo-heading">${escapeHtml(cat)}</div>
+        <ul class="hero-todo-list" data-category="${escapeHtml(cat)}">
+          ${sortByPriority(groups[cat]).map(heroTodoItemHtml).join("")}
+        </ul>
+      </div>
+    `).join("");
+
+    return `
+      <div class="hero-row">
+        <div class="hero-tag">還沒做完的（${unfinished.length}）</div>
+        ${groupsMarkup}
+      </div>
+    `;
+  }
+
+  function renderHero() {
+    const hero = document.getElementById("heroCard");
+    let resumeHtml;
+    if (!history.length) {
+      resumeHtml = `
+        <div class="hero-label">從這裡開始</div>
+        <div class="hero-empty">還沒有收尾紀錄。今天結束時按下方「結束今天」，明天這裡就會顯示妳的第一步。</div>
+      `;
+    } else {
+      const last = history[history.length - 1];
+      // Once you've actually started, the nudge has done its job — it
+      // disappears instead of lingering as a stale prompt.
+      const actionHtml = last.started ? "" : `
+        <div class="hero-row">
+          <div class="hero-tag">現在做這件事</div>
+          <div class="hero-action">${escapeHtml(last.nextAction || "（沒有填寫）")}</div>
+          <button class="hero-start-btn" type="button">成功啟動！</button>
+        </div>
+      `;
+      resumeHtml = `
+        <div class="hero-label">從這裡開始</div>
+        <div class="hero-row">
+          <div class="hero-tag">上次停在</div>
+          <div class="hero-text">${escapeHtml(last.stuck || "（沒有填寫）")}</div>
+        </div>
+        ${actionHtml}
+        <div class="hero-meta">記錄於 ${escapeHtml(last.date)}</div>
+      `;
+    }
+    hero.innerHTML = resumeHtml + unfinishedHtml();
+  }
+
+  // Category is now changed by dragging the item into a different day's
+  // category group (via the handle up front) instead of a per-row dropdown.
+  function itemRowHtml(it, dateKey) {
+    const cat = it.category || DEFAULT_CATEGORY;
+    return `
+      <li class="item ${it.done ? "done" : ""}" draggable="true" data-id="${it.id}" data-date="${dateKey}" data-category="${escapeHtml(cat)}">
+        <span class="item-drag-handle" title="拖曳到別的分類">⠿</span>
+        <input type="checkbox" ${it.done ? "checked" : ""} />
+        <div class="item-text" data-id="${it.id}">${escapeHtml(it.text)}</div>
+        ${attachmentHtml(Object.assign({ _dateKey: dateKey }, it))}
+        <button class="item-del" title="刪除">×</button>
+      </li>
+    `;
+  }
+
+  function groupsHtml(items) {
+    const groups = {};
+    items.forEach(it => {
+      const cat = it.category || DEFAULT_CATEGORY;
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(it);
+    });
+    const orderedCats = [
+      ...categories.filter(c => groups[c]),
+      ...Object.keys(groups).filter(c => !categories.includes(c))
+    ];
+    return orderedCats.map(cat => `
+      <div class="cat-group">
+        <div class="cat-header">${escapeHtml(cat)}</div>
+        <ul class="item-list-inner" data-category="${escapeHtml(cat)}">
+          ${groups[cat].map(it => itemRowHtml(it, it._dateKey)).join("")}
+        </ul>
+      </div>
+    `).join("");
+  }
+
+  function renderItems() {
+    const list = document.getElementById("itemList");
+
+    // dates with at least one item, newest first, excluding today (handled separately)
+    const otherDates = Object.keys(captures)
+      .filter(k => k !== tk && captures[k] && captures[k].length)
+      .sort((a, b) => b.localeCompare(a))
+      .slice(0, MAX_DAYS_SHOWN);
+
+    // tag each item with its date so groupsHtml can build correct data-date attrs
+    const todayItems = (captures[tk] || []).map(it => Object.assign({ _dateKey: tk }, it));
+    const todaySectionInner = todayItems.length
+      ? groupsHtml(todayItems)
+      : `<div class="empty-note">今天還沒有記錄</div>`;
+
+    let html = `
+      <div class="date-section" data-date="${tk}">
+        <div class="date-section-label">今天・${escapeHtml(formatDateLine())}</div>
+        ${todaySectionInner}
+      </div>
+    `;
+
+    html += otherDates.map(k => {
+      const items = captures[k].map(it => Object.assign({ _dateKey: k }, it));
+      const isOpen = openDates.has(k);
+      return `
+        <details class="date-details" data-date="${k}" ${isOpen ? "open" : ""}>
+          <summary>${escapeHtml(formatDateLine(dateFromKey(k)))}</summary>
+          ${groupsHtml(items)}
+        </details>
+      `;
+    }).join("");
+
+    list.innerHTML = html;
+
+    list.querySelectorAll("details.date-details").forEach(det => {
+      det.addEventListener("toggle", () => {
+        const k = det.getAttribute("data-date");
+        if (det.open) openDates.add(k); else openDates.delete(k);
+      });
+    });
+  }
+
+  const heroCardEl = document.getElementById("heroCard");
+
+  // Shared by both the journal and the "Start Here" list: handles clicks on the
+  // 📎 open/remove buttons on an existing attachment badge. Returns true if it
+  // handled the click. (Adding a fresh attachment happens via right-click, not
+  // a click target here — see the context menu below.)
+  function handleAttachmentClick(e) {
+    const openBtn = e.target.closest(".attach-open");
+    if (openBtn) {
+      const id = openBtn.getAttribute("data-id");
+      const date = openBtn.getAttribute("data-date");
+      const it = (captures[date] || []).find(x => x.id === id);
+      if (it && it.attachment) downloadAttachment(it.attachment);
+      return true;
+    }
+    const removeBtn = e.target.closest(".attach-remove");
+    if (removeBtn) {
+      const id = removeBtn.getAttribute("data-id");
+      const date = removeBtn.getAttribute("data-date");
+      const it = (captures[date] || []).find(x => x.id === id);
+      if (it) {
+        delete it.attachment;
+        saveCaptures(captures);
+        renderHero();
+        renderItems();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  // Click the text of a "Start Here" to-do item to edit it in place, same as the journal below.
+  // Click the × to delete it outright.
+  heroCardEl.addEventListener("click", (e) => {
+    if (handleAttachmentClick(e)) return;
+    const startBtn = e.target.closest(".hero-start-btn");
+    if (startBtn) {
+      if (history.length) {
+        history[history.length - 1].started = true;
+        saveHistory(history);
+        renderHero();
+      }
+      return;
+    }
+    const delBtn = e.target.closest(".hero-todo-del");
+    if (delBtn) {
+      const li = delBtn.closest(".hero-todo-item");
+      if (!li) return;
+      const id = li.getAttribute("data-id");
+      const date = li.getAttribute("data-date");
+      captures[date] = (captures[date] || []).filter(x => x.id !== id);
+      saveCaptures(captures);
+      renderHero();
+      renderItems();
+      return;
+    }
+    const textEl = e.target.closest(".hero-unfinished-text");
+    if (!textEl) return;
+    const li = textEl.closest(".hero-todo-item");
+    if (!li) return;
+    beginInlineEdit(li, li.getAttribute("data-id"), li.getAttribute("data-date"), ".hero-unfinished-text", true);
+  });
+
+  // Checking off an item straight from the "Start Here" unfinished list marks it done everywhere
+  heroCardEl.addEventListener("change", (e) => {
+    if (!e.target.matches('input[type="checkbox"]')) return;
+    const li = e.target.closest(".hero-todo-item");
+    if (!li) return;
+    const id = li.getAttribute("data-id");
+    const date = li.getAttribute("data-date");
+    const it = (captures[date] || []).find(x => x.id === id);
+    if (it) {
+      completeItem(it, date);
+      saveCaptures(captures);
+      renderHero();
+      renderItems();
+    }
+  });
+
+  // Right-click a "Start Here" item for the same add/replace/remove attachment menu
+  heroCardEl.addEventListener("contextmenu", (e) => {
+    const li = e.target.closest(".hero-todo-item");
+    if (!li) return;
+    e.preventDefault();
+    const id = li.getAttribute("data-id");
+    const date = li.getAttribute("data-date");
+    const it = (captures[date] || []).find(x => x.id === id);
+    showContextMenu(e.clientX, e.clientY, id, date, it);
+  });
+
+  // Drag-and-drop reordering within the "Start Here" to-do list. Reordering is
+  // scoped to one project/category at a time; the new order is saved as an
+  // explicit priority on each item so it sticks across reloads.
+  let draggedId = null;
+  let draggedCategory = null;
+
+  heroCardEl.addEventListener("dragstart", (e) => {
+    const li = e.target.closest(".hero-todo-item");
+    if (!li) return;
+    draggedId = li.getAttribute("data-id");
+    draggedCategory = li.getAttribute("data-category");
+    li.classList.add("dragging");
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", draggedId);
+    }
+  });
+
+  heroCardEl.addEventListener("dragend", (e) => {
+    const li = e.target.closest(".hero-todo-item");
+    if (li) li.classList.remove("dragging");
+    heroCardEl.querySelectorAll(".hero-todo-item.drop-target").forEach(el => el.classList.remove("drop-target"));
+    draggedId = null;
+    draggedCategory = null;
+  });
+
+  heroCardEl.addEventListener("dragover", (e) => {
+    const li = e.target.closest(".hero-todo-item");
+    if (!li || !draggedId) return;
+    if (li.getAttribute("data-category") !== draggedCategory) return; // only reorder within the same project
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    heroCardEl.querySelectorAll(".hero-todo-item.drop-target").forEach(el => el.classList.remove("drop-target"));
+    if (li.getAttribute("data-id") !== draggedId) li.classList.add("drop-target");
+  });
+
+  heroCardEl.addEventListener("drop", (e) => {
+    const li = e.target.closest(".hero-todo-item");
+    if (!li || !draggedId) return;
+    const category = li.getAttribute("data-category");
+    if (category !== draggedCategory) return;
+    e.preventDefault();
+    const targetId = li.getAttribute("data-id");
+    if (targetId === draggedId) return;
+
+    const groupItems = getAllUnfinished().filter(it => (it.category || DEFAULT_CATEGORY) === category);
+    const ordered = sortByPriority(groupItems);
+    const fromIdx = ordered.findIndex(it => it.id === draggedId);
+    const toIdx = ordered.findIndex(it => it.id === targetId);
+    if (fromIdx === -1 || toIdx === -1) return;
+    const [moved] = ordered.splice(fromIdx, 1);
+    ordered.splice(toIdx, 0, moved);
+
+    ordered.forEach((it, idx) => {
+      const real = (captures[it._dateKey] || []).find(x => x.id === it.id);
+      if (real) real.priority = idx;
+    });
+    saveCaptures(captures);
+    renderHero();
+  });
+
+  // Event delegation: one set of listeners for the whole journal, regardless of which date/day it's in
+  const itemListEl = document.getElementById("itemList");
+
+  itemListEl.addEventListener("click", (e) => {
+    if (handleAttachmentClick(e)) return;
+    const delBtn = e.target.closest(".item-del");
+    if (delBtn) {
+      const li = delBtn.closest(".item");
+      const id = li.getAttribute("data-id");
+      const date = li.getAttribute("data-date");
+      captures[date] = (captures[date] || []).filter(x => x.id !== id);
+      saveCaptures(captures);
+      renderHero();
+      renderItems();
+      return;
+    }
+    const textEl = e.target.closest(".item-text");
+    if (textEl) {
+      const li = textEl.closest(".item");
+      beginInlineEdit(li, li.getAttribute("data-id"), li.getAttribute("data-date"), ".item-text");
+    }
+  });
+
+  itemListEl.addEventListener("change", (e) => {
+    if (!e.target.matches("input[type=checkbox]")) return;
+    const li = e.target.closest(".item");
+    if (!li) return;
+    const id = li.getAttribute("data-id");
+    const date = li.getAttribute("data-date");
+    const it = (captures[date] || []).find(x => x.id === id);
+    if (!it) return;
+    if (e.target.checked) {
+      completeItem(it, date);
+    } else {
+      it.done = false; // reopen in place — no move back, only completing relocates an item
+    }
+    saveCaptures(captures);
+    renderHero();
+    renderItems();
+  });
+
+  // Right-click a journal item or a "Start Here" to-do item to add/replace/
+  // remove its attachment, instead of a permanent icon on every row.
+  itemListEl.addEventListener("contextmenu", (e) => {
+    const li = e.target.closest(".item");
+    if (!li) return;
+    e.preventDefault();
+    const id = li.getAttribute("data-id");
+    const date = li.getAttribute("data-date");
+    const it = (captures[date] || []).find(x => x.id === id);
+    showContextMenu(e.clientX, e.clientY, id, date, it);
+  });
+
+  // Drag a journal item (by its ⠿ handle) into a different category group,
+  // within the same day, to recategorize it. Category groups that don't
+  // exist yet for that day are temporarily shown as empty drop targets while
+  // dragging, so you can drop into a category with nothing in it today.
+  let journalDraggedId = null;
+  let journalDraggedDate = null;
+
+  function journalDragScope(el) {
+    return el.closest(".date-section, details.date-details");
+  }
+
+  itemListEl.addEventListener("dragstart", (e) => {
+    const li = e.target.closest(".item");
+    if (!li) return;
+    journalDraggedId = li.getAttribute("data-id");
+    journalDraggedDate = li.getAttribute("data-date");
+    li.classList.add("dragging");
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", journalDraggedId);
+    }
+    const scope = journalDragScope(li);
+    if (scope) {
+      const present = new Set(
+        Array.from(scope.querySelectorAll(".item-list-inner")).map(ul => ul.getAttribute("data-category"))
+      );
+      categories.filter(c => !present.has(c)).forEach(cat => {
+        const ghost = document.createElement("div");
+        ghost.className = "cat-group drag-ghost";
+        ghost.innerHTML = `
+          <div class="cat-header">${escapeHtml(cat)}</div>
+          <ul class="item-list-inner" data-category="${escapeHtml(cat)}"></ul>
+        `;
+        scope.appendChild(ghost);
+      });
+    }
+  });
+
+  itemListEl.addEventListener("dragend", (e) => {
+    const li = e.target.closest(".item");
+    if (li) li.classList.remove("dragging");
+    itemListEl.querySelectorAll(".item-list-inner.drop-target-list").forEach(el => el.classList.remove("drop-target-list"));
+    itemListEl.querySelectorAll(".drag-ghost").forEach(el => el.remove());
+    journalDraggedId = null;
+    journalDraggedDate = null;
+  });
+
+  itemListEl.addEventListener("dragover", (e) => {
+    if (!journalDraggedId) return;
+    const listEl = e.target.closest(".item-list-inner");
+    if (!listEl) return;
+    const scope = journalDragScope(listEl);
+    const scopeDate = scope && scope.getAttribute("data-date");
+    if (!scope || scopeDate !== journalDraggedDate) return;
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "move";
+    itemListEl.querySelectorAll(".item-list-inner.drop-target-list").forEach(el => el.classList.remove("drop-target-list"));
+    listEl.classList.add("drop-target-list");
+  });
+
+  itemListEl.addEventListener("drop", (e) => {
+    if (!journalDraggedId) return;
+    const listEl = e.target.closest(".item-list-inner");
+    if (!listEl) return;
+    const scope = journalDragScope(listEl);
+    const scopeDate = scope && scope.getAttribute("data-date");
+    if (!scope || scopeDate !== journalDraggedDate) return;
+    e.preventDefault();
+    const newCategory = listEl.getAttribute("data-category");
+    const it = (captures[journalDraggedDate] || []).find(x => x.id === journalDraggedId);
+    if (it) {
+      const oldCategory = it.category || DEFAULT_CATEGORY;
+      if (newCategory !== oldCategory) {
+        const tokens = tokenize(it.text);
+        updateCatKeywords(oldCategory, tokens, -1);
+        updateCatKeywords(newCategory, tokens, 1);
+        it.category = newCategory;
+        saveCaptures(captures);
+      }
+    }
+    renderHero();
+    renderItems();
+  });
+
+  // Checking an item off moves it into *today's* bucket (wherever it was
+  // originally captured), so the day it shows as done under is the day it
+  // actually got finished — not the day it was jotted down. Unchecking just
+  // reopens it in place; only the forward "done" transition relocates it.
+  function completeItem(it, currentDateKey) {
+    it.done = true;
+    if (currentDateKey === tk) return;
+    captures[currentDateKey] = (captures[currentDateKey] || []).filter(x => x.id !== it.id);
+    if (!captures[tk]) captures[tk] = [];
+    captures[tk].push(it);
+  }
+
+  // Reparse an edited item's text and apply whatever it implies: new category,
+  // "done" flipped on, and/or a move to a different day's bucket. Shared by both
+  // the journal's inline editing and the "Start Here" to-do list's inline editing.
+  function applyEditedText(it, dateKey, val) {
+    const parsed = parseCaptureText(val);
+    it.text = parsed.text;
+    if (parsed.categoryMatched) {
+      const oldCategory = it.category || DEFAULT_CATEGORY;
+      ensureCategory(parsed.category);
+      it.category = parsed.category;
+      if (parsed.category !== oldCategory) {
+        const tokens = tokenize(parsed.text);
+        updateCatKeywords(oldCategory, tokens, -1);
+        updateCatKeywords(parsed.category, tokens, 1);
+      }
+    }
+    if (parsed.done) it.done = true; // reparsing only ever turns "done" on, never back off
+
+    const targetKey = parsed.dateMatched ? dateKeyWithOffset(parsed.dateOffset) : dateKey;
+    if (targetKey !== dateKey) {
+      captures[dateKey] = (captures[dateKey] || []).filter(x => x.id !== it.id);
+      if (!captures[targetKey]) captures[targetKey] = [];
+      captures[targetKey].push(it);
+      openDates.add(targetKey);
+    }
+  }
+
+  // Turns any item's text into an inline input for editing, in place. Used for
+  // both the journal (".item-text") and the "Start Here" to-do list
+  // (".hero-unfinished-text") — pass draggableParent when the text sits inside a
+  // draggable <li>, so dragging doesn't fight with selecting/typing.
+  function beginInlineEdit(li, id, dateKey, textSelector, draggableParent) {
+    const it = (captures[dateKey] || []).find(x => x.id === id);
+    if (!it) return;
+    if (draggableParent) li.draggable = false;
+    const textEl = li.querySelector(textSelector);
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "item-edit-input";
+    input.value = it.text;
+    textEl.replaceWith(input);
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+
+    let settled = false;
+    function commit() {
+      if (settled) return;
+      settled = true;
+      const val = input.value.trim();
+      if (val) applyEditedText(it, dateKey, val);
+      saveCaptures(captures);
+      renderHero();
+      renderItems();
+    }
+    function cancel() {
+      if (settled) return;
+      settled = true;
+      renderHero();
+      renderItems();
+    }
+    input.addEventListener("blur", commit);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); commit(); }
+      if (e.key === "Escape") { e.preventDefault(); cancel(); }
+    });
+  }
+
+  function renderHistory() {
+    const el = document.getElementById("historyList");
+    if (!history.length) {
+      el.innerHTML = `<div class="empty-note">還沒有紀錄</div>`;
+      return;
+    }
+    const rev = [...history].reverse();
+    el.innerHTML = rev.map(h => `
+      <div class="history-entry">
+        <div class="history-date">${escapeHtml(h.date)}</div>
+        <div class="history-stuck">停在：${escapeHtml(h.stuck || "—")}</div>
+        <div class="history-action">下一步：${escapeHtml(h.nextAction || "—")}</div>
+      </div>
+    `).join("");
+  }
+
+  // Routine reminder: a small recurring checklist, separate from the one-off
+  // capture journal. It resets on its own every day because completion is
+  // logged per date key — "today" always starts unchecked until you check it.
+  function renderRoutines() {
+    const listEl = document.getElementById("routineList");
+    const progressEl = document.getElementById("routineProgress");
+    const todayLog = routineLog[tk] || {};
+
+    if (!routines.length) {
+      listEl.innerHTML = `<div class="routine-empty">還沒有例行事項，加一個每天想做的小事吧，例如「喝水」「運動 10 分鐘」。</div>`;
+      progressEl.textContent = "";
+      return;
+    }
+
+    const doneCount = routines.filter(r => todayLog[r.id]).length;
+    progressEl.textContent = `今天 ${doneCount} / ${routines.length} 完成`;
+
+    listEl.innerHTML = routines.map(r => `
+      <li class="routine-item ${todayLog[r.id] ? "done" : ""}" data-id="${r.id}">
+        <input type="checkbox" ${todayLog[r.id] ? "checked" : ""} />
+        <span class="routine-text">${escapeHtml(r.text)}</span>
+        <button class="routine-del" title="刪除這個例行事項">×</button>
+      </li>
+    `).join("");
+  }
+
+  const routineListEl = document.getElementById("routineList");
+
+  routineListEl.addEventListener("change", (e) => {
+    if (!e.target.matches('input[type="checkbox"]')) return;
+    const li = e.target.closest(".routine-item");
+    if (!li) return;
+    const id = li.getAttribute("data-id");
+    if (!routineLog[tk]) routineLog[tk] = {};
+    routineLog[tk][id] = e.target.checked;
+    saveRoutineLog(routineLog);
+    renderRoutines();
+  });
+
+  routineListEl.addEventListener("click", (e) => {
+    const delBtn = e.target.closest(".routine-del");
+    if (!delBtn) return;
+    const li = delBtn.closest(".routine-item");
+    const id = li.getAttribute("data-id");
+    routines = routines.filter(r => r.id !== id);
+    saveRoutines(routines);
+    renderRoutines();
+  });
+
+  function addRoutine(text) {
+    if (!text.trim()) return;
+    routines.push({ id: uid(), text: text.trim(), createdAt: Date.now() });
+    saveRoutines(routines);
+    renderRoutines();
+  }
+
+  document.getElementById("routineAddBtn").addEventListener("click", () => {
+    const input = document.getElementById("routineInput");
+    addRoutine(input.value);
+    input.value = "";
+    input.focus();
+  });
+  document.getElementById("routineInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      addRoutine(e.target.value);
+      e.target.value = "";
+    }
+  });
+
+  // A file staged via the 📎 next to the capture box, waiting to be attached
+  // to whatever gets added next.
+  let pendingNewAttachment = null;
+
+  function renderNewAttachPreview() {
+    const el = document.getElementById("newAttachPreview");
+    const btn = document.getElementById("newAttachBtn");
+    if (!pendingNewAttachment) {
+      el.style.display = "none";
+      el.innerHTML = "";
+      btn.classList.remove("has-file");
+      return;
+    }
+    btn.classList.add("has-file");
+    el.style.display = "flex";
+    el.innerHTML = `
+      <span>📎 ${escapeHtml(truncateName(pendingNewAttachment.name, 26))}，加入時會一起附上</span>
+      <button id="clearNewAttachBtn" type="button" title="取消附加">×</button>
+    `;
+    document.getElementById("clearNewAttachBtn").addEventListener("click", () => {
+      pendingNewAttachment = null;
+      renderNewAttachPreview();
+    });
+  }
+
+  document.getElementById("newAttachBtn").addEventListener("click", () => {
+    const input = document.getElementById("newAttachFileInput");
+    input.value = "";
+    input.click();
+  });
+
+  document.getElementById("newAttachFileInput").addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (file.size > MAX_ATTACHMENT_BYTES) {
+      showToast(`檔案太大了（${(file.size / 1024 / 1024).toFixed(1)}MB），先支援 2MB 以內的檔案`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      pendingNewAttachment = { name: file.name, type: file.type, size: file.size, dataUrl: reader.result };
+      renderNewAttachPreview();
+    };
+    reader.onerror = () => showToast("讀取檔案失敗，再試一次看看");
+    reader.readAsDataURL(file);
+  });
+
+  function addCapture(raw) {
+    if (!raw.trim()) return;
+    const parsed = parseCaptureText(raw);
+    const { text, category, done, dateOffset } = parsed;
+    ensureCategory(category);
+    if (parsed.categoryMatched) {
+      // An explicit #tag is a deliberate, trustworthy signal — learn from it
+      // so similar wording gets auto-classified next time.
+      updateCatKeywords(category, tokenize(text), 1);
+    }
+    const targetKey = dateKeyWithOffset(dateOffset);
+    if (!captures[targetKey]) captures[targetKey] = [];
+    const newItem = { id: uid(), text, done, ts: Date.now(), category };
+    if (pendingNewAttachment) newItem.attachment = pendingNewAttachment;
+    captures[targetKey].push(newItem);
+    try {
+      saveCaptures(captures);
+    } catch (err) {
+      captures[targetKey].pop();
+      showToast("儲存失敗，可能是空間不足了，附件換個更小的檔案試試");
+      return;
+    }
+    if (pendingNewAttachment) {
+      pendingNewAttachment = null;
+      renderNewAttachPreview();
+    }
+    if (targetKey !== tk) openDates.add(targetKey);
+    renderHero();
+    renderItems();
+  }
+
+  document.getElementById("addBtn").addEventListener("click", () => {
+    const input = document.getElementById("captureInput");
+    addCapture(input.value);
+    input.value = "";
+    input.focus();
+  });
+  document.getElementById("captureInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      addCapture(e.target.value);
+      e.target.value = "";
+    }
+  });
+
+  const overlay = document.getElementById("overlay");
+  document.getElementById("shutdownBtn").addEventListener("click", () => {
+    const items = captures[tk] || [];
+    const leftover = items.filter(x => !x.done);
+    const leftoverField = document.getElementById("leftoverField");
+    const preview = document.getElementById("leftoverPreview");
+    if (leftover.length) {
+      leftoverField.style.display = "block";
+      preview.innerHTML = leftover.map(x => {
+        const cat = x.category && x.category !== DEFAULT_CATEGORY ? `[${escapeHtml(x.category)}] ` : "";
+        return `<div>・ ${cat}${escapeHtml(x.text)}</div>`;
+      }).join("");
+    } else {
+      leftoverField.style.display = "none";
+    }
+    document.getElementById("stuckInput").value = "";
+    document.getElementById("actionInput").value = "";
+    overlay.classList.add("open");
+  });
+  document.getElementById("cancelBtn").addEventListener("click", () => {
+    overlay.classList.remove("open");
+  });
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.classList.remove("open");
+  });
+
+  document.getElementById("saveBtn").addEventListener("click", () => {
+    const stuck = document.getElementById("stuckInput").value.trim();
+    const nextAction = document.getElementById("actionInput").value.trim();
+    if (!nextAction) {
+      document.getElementById("actionInput").focus();
+      return;
+    }
+    const items = captures[tk] || [];
+    const leftover = items.filter(x => !x.done).map(x => ({ text: x.text, category: x.category || DEFAULT_CATEGORY }));
+    history.push({
+      date: formatDateLine(),
+      dateKey: tk,
+      stuck,
+      nextAction,
+      leftover
+    });
+    saveHistory(history);
+    overlay.classList.remove("open");
+    renderHero();
+    renderHistory();
+  });
+
+  // A time-of-day greeting — uses the real clock (not the effective/night-owl
+  // day), since it's about how the moment actually feels, not which day's
+  // bucket things land in.
+  function greetingPrefix() {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 11) return "早安";
+    if (h >= 11 && h < 13) return "午安";
+    if (h >= 13 && h < 18) return "下午好";
+    if (h >= 18 && h < 23) return "晚上好";
+    return "夜深了";
+  }
+
+  document.getElementById("dateLine").textContent = formatDateLine();
+  document.getElementById("greeting").textContent = `${greetingPrefix()}，這是你的今日工作台`;
+  renderHero();
+  renderItems();
+  renderHistory();
+  renderRoutines();
+})();
+</script>
+</body>
+</html>
