@@ -554,30 +554,18 @@
     top: 12px;
     right: 16px;
     z-index: 15;
+    flex-direction: column;
+    align-items: center;
+    background: #FFFFFF;
+    border: 1px solid #E9E8E1;
+    border-radius: 16px;
+    padding: 16px 18px;
+    width: 180px;
+    box-shadow: 0 4px 14px rgba(46,44,39,0.08);
   }
   .auth-error { color: #C6613F; font-size: 13px; margin: -6px 0 14px; display: none; }
 
-  /* Profile chip + dropdown */
-  .profile-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #FFFFFF;
-    border: 1px solid #E9E8E1;
-    border-radius: 999px;
-    padding: 5px 14px 5px 5px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 600;
-    color: #2E2C27;
-    max-width: 200px;
-  }
-  .profile-chip:hover { border-color: #F0D9C8; }
-  .profile-chip-name {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+  /* Profile card — always-visible avatar + name + menu, no click-to-open dropdown */
   .profile-avatar {
     width: 26px;
     height: 26px;
@@ -594,19 +582,36 @@
   }
   .profile-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .profile-avatar-lg { width: 56px; height: 56px; font-size: 22px; }
-  .profile-dropdown {
-    display: none;
-    position: absolute;
-    top: 42px;
-    right: 0;
-    background: #fff;
-    border: 1px solid #E9E8E1;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(46,44,39,0.18);
-    padding: 16px;
-    width: 240px;
+  .profile-card-avatar { width: 52px; height: 52px; font-size: 20px; margin-bottom: 8px; }
+  .profile-card-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #2E2C27;
+    text-align: center;
+    margin-bottom: 12px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
-  .profile-dropdown.open { display: block; }
+  .profile-card-menu {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .profile-card-menu-item {
+    background: none;
+    border: none;
+    color: #6B6A63;
+    font-size: 12px;
+    padding: 7px 4px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 6px;
+    width: 100%;
+  }
+  .profile-card-menu-item:hover { background: #FAFAF8; color: #C6613F; }
   .profile-dropdown-avatar {
     display: flex;
     flex-direction: column;
@@ -620,7 +625,7 @@
     word-break: break-all;
     margin-bottom: 10px;
   }
-  #profileLogoutBtn { color: #C6613F; text-align: center; font-weight: 600; }
+  #profileLogoutBtn { color: #C6613F; font-weight: 600; }
 
   #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay { z-index: 45; }
   .modal-close-x {
@@ -764,18 +769,16 @@
   </div>
 </div>
 <div id="authBar">
-  <button id="profileChipBtn" type="button" class="profile-chip">
-    <span class="profile-avatar" id="profileAvatarWrap">
-      <img id="profileAvatarImg" style="display:none;" />
-      <span id="profileAvatarInitial"></span>
-    </span>
-    <span class="profile-chip-name" id="profileChipName"></span>
-  </button>
-  <div class="profile-dropdown" id="profileDropdown">
-    <button type="button" class="context-menu-item" id="openProfileBtn">👤 個人檔案</button>
-    <button type="button" class="context-menu-item" id="openSettingsBtn">⚙️ 設定</button>
-    <div class="context-menu-divider" style="margin:6px 0 8px;"></div>
-    <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
+  <span class="profile-avatar profile-card-avatar" id="profileCardAvatarWrap">
+    <img id="profileCardAvatarImg" style="display:none;" />
+    <span id="profileCardAvatarInitial"></span>
+  </span>
+  <div class="profile-card-name" id="profileCardName"></div>
+  <div class="profile-card-menu">
+    <button type="button" class="profile-card-menu-item" id="openProfileBtn">個人檔案</button>
+    <button type="button" class="profile-card-menu-item" id="openSettingsBtn">設定</button>
+    <button type="button" class="profile-card-menu-item" id="switchAccountBtn">切換帳號</button>
+    <button type="button" class="profile-card-menu-item" id="profileLogoutBtn">登出</button>
   </div>
 </div>
 
@@ -803,10 +806,9 @@
   <div class="modal" style="max-width:360px; position:relative;">
     <button type="button" id="settingsOverlayCloseBtn" class="modal-close-x" title="關閉">×</button>
     <h3>設定</h3>
-    <div class="sub">帳號同步與跨裝置相關的功能都在這裡。</div>
+    <div class="sub">資料備份與跨裝置相關的功能都在這裡。</div>
     <div style="margin-top:14px;">
       <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
-      <button type="button" class="context-menu-item" id="switchAccountBtn">🔀 切換帳號</button>
     </div>
   </div>
 </div>
@@ -2569,8 +2571,8 @@ if (typeof window.cowork !== "undefined") {
     const profile = getProfile();
     const label = profile.displayName || currentEmail || "";
     const initial = (label.trim().charAt(0) || "?").toUpperCase();
-    document.getElementById("profileChipName").textContent = label;
-    setAvatarEl(document.getElementById("profileAvatarImg"), document.getElementById("profileAvatarInitial"), profile.avatar, initial);
+    document.getElementById("profileCardName").textContent = label;
+    setAvatarEl(document.getElementById("profileCardAvatarImg"), document.getElementById("profileCardAvatarInitial"), profile.avatar, initial);
     setAvatarEl(document.getElementById("profileAvatarImgLg"), document.getElementById("profileAvatarInitialLg"), profile.avatar, initial);
     document.getElementById("displayNameInput").value = profile.displayName || "";
     document.getElementById("profileEmailLabel").textContent = currentEmail;
@@ -2609,7 +2611,7 @@ if (typeof window.cowork !== "undefined") {
     inSwitchFlow = false;
     document.querySelector(".wrap").style.display = "";
     document.getElementById("shutdownBtn").style.display = "";
-    document.getElementById("authBar").style.display = "block";
+    document.getElementById("authBar").style.display = "flex";
     currentEmail = email || "";
     renderProfileChip();
   }
@@ -2774,21 +2776,10 @@ if (typeof window.cowork !== "undefined") {
     doSignOut();
   });
 
-  document.getElementById("profileChipBtn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    document.getElementById("profileDropdown").classList.toggle("open");
-  });
-  document.getElementById("profileDropdown").addEventListener("click", (e) => e.stopPropagation());
-  document.addEventListener("click", () => {
-    document.getElementById("profileDropdown").classList.remove("open");
-  });
-
-  // The chip's dropdown is now just navigation — editing the avatar/nickname
-  // lives in its own "個人檔案" page, and the sync/switch-account actions
-  // live in a separate "設定" page, instead of everything crammed into one menu.
-  document.getElementById("openProfileBtn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    document.getElementById("profileDropdown").classList.remove("open");
+  // The profile card in the corner is always visible now (no click-to-open
+  // dropdown) — editing the avatar/nickname lives in its own "個人檔案" page,
+  // and account-sync-related actions live in a separate "設定" page.
+  document.getElementById("openProfileBtn").addEventListener("click", () => {
     document.getElementById("profileOverlay").classList.add("open");
   });
   document.getElementById("profileOverlayCloseBtn").addEventListener("click", () => {
@@ -2798,9 +2789,7 @@ if (typeof window.cowork !== "undefined") {
     if (e.target.id === "profileOverlay") document.getElementById("profileOverlay").classList.remove("open");
   });
 
-  document.getElementById("openSettingsBtn").addEventListener("click", (e) => {
-    e.stopPropagation();
-    document.getElementById("profileDropdown").classList.remove("open");
+  document.getElementById("openSettingsBtn").addEventListener("click", () => {
     document.getElementById("settingsOverlay").classList.add("open");
   });
   document.getElementById("settingsOverlayCloseBtn").addEventListener("click", () => {
@@ -2860,11 +2849,9 @@ if (typeof window.cowork !== "undefined") {
     document.getElementById("authOverlay").classList.remove("open");
   });
 
-  document.getElementById("switchAccountBtn").addEventListener("click", (e) => {
-    e.stopPropagation();
+  document.getElementById("switchAccountBtn").addEventListener("click", () => {
     renderKnownAccounts();
     document.getElementById("switchOverlay").classList.add("open");
-    document.getElementById("settingsOverlay").classList.remove("open");
   });
   document.getElementById("switchCloseBtn").addEventListener("click", () => {
     document.getElementById("switchOverlay").classList.remove("open");
