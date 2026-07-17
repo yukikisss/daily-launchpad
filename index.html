@@ -479,6 +479,7 @@
   }
   .context-menu-item:hover { background: #FAFAF8; }
   .context-menu-divider { height: 1px; background: #F1F0EA; margin: 4px 2px; }
+  .settings-divider { height: 1px; background: rgba(0, 0, 0, 0.1); margin: 8px 2px; }
   .context-menu-label {
     font-size: 11px;
     font-weight: 700;
@@ -829,8 +830,22 @@
     <button type="button" id="settingsOverlayCloseBtn" class="modal-close-x" title="關閉">×</button>
     <h3>設定</h3>
     <div class="sub">資料備份與跨裝置相關的功能都在這裡。</div>
-    <div style="margin-top:14px;">
+    <div id="settingsMainView" style="margin-top:14px;">
       <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
+      <div class="settings-divider"></div>
+      <button type="button" class="context-menu-item" id="deleteAccountBtn" style="color:#C6613F;">🗑️ 註銷帳號</button>
+    </div>
+    <div id="deleteAccountConfirm" style="display:none; margin-top:14px;">
+      <div style="font-size:13px; color:#C6613F; margin-bottom:12px;">註銷帳號會永久刪除妳的所有資料，且無法復原。請輸入密碼確認。</div>
+      <div class="field">
+        <label>密碼</label>
+        <input type="password" id="deleteAccountPassword" placeholder="輸入密碼確認" />
+      </div>
+      <div class="auth-error" id="deleteAccountError"></div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="deleteAccountCancelBtn" type="button">取消</button>
+        <button class="btn-primary" id="deleteAccountConfirmBtn" type="button">確認註銷</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2319,10 +2334,11 @@ if (typeof window.cowork !== "undefined") {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-    createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail
+    createUserWithEmailAndPassword, signOut, sendEmailVerification, sendPasswordResetEmail,
+    deleteUser, reauthenticateWithCredential, EmailAuthProvider
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import {
-    getFirestore, doc, onSnapshot, setDoc, serverTimestamp
+    getFirestore, doc, onSnapshot, setDoc, serverTimestamp, deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -2825,6 +2841,7 @@ if (typeof window.cowork !== "undefined") {
 
   document.getElementById("openSettingsBtn").addEventListener("click", () => {
     document.getElementById("profileCardPanel").classList.remove("open");
+    resetDeleteAccountView();
     document.getElementById("settingsOverlay").classList.add("open");
   });
   document.getElementById("settingsOverlayCloseBtn").addEventListener("click", () => {
@@ -2832,6 +2849,48 @@ if (typeof window.cowork !== "undefined") {
   });
   document.getElementById("settingsOverlay").addEventListener("click", (e) => {
     if (e.target.id === "settingsOverlay") document.getElementById("settingsOverlay").classList.remove("open");
+  });
+
+  function resetDeleteAccountView() {
+    document.getElementById("settingsMainView").style.display = "block";
+    document.getElementById("deleteAccountConfirm").style.display = "none";
+    document.getElementById("deleteAccountPassword").value = "";
+    document.getElementById("deleteAccountError").style.display = "none";
+  }
+  document.getElementById("deleteAccountBtn").addEventListener("click", () => {
+    document.getElementById("settingsMainView").style.display = "none";
+    document.getElementById("deleteAccountConfirm").style.display = "block";
+  });
+  document.getElementById("deleteAccountCancelBtn").addEventListener("click", () => {
+    resetDeleteAccountView();
+  });
+  document.getElementById("deleteAccountConfirmBtn").addEventListener("click", async () => {
+    const password = document.getElementById("deleteAccountPassword").value;
+    const errEl = document.getElementById("deleteAccountError");
+    errEl.style.display = "none";
+    if (!password) {
+      errEl.textContent = "請輸入密碼";
+      errEl.style.display = "block";
+      return;
+    }
+    const user = auth.currentUser;
+    if (!user) return;
+    const btn = document.getElementById("deleteAccountConfirmBtn");
+    btn.disabled = true;
+    try {
+      const cred = EmailAuthProvider.credential(user.email, password);
+      await reauthenticateWithCredential(user, cred);
+      if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+      await deleteDoc(doc(db, "users", user.uid));
+      removeKnownAccount(user.uid);
+      clearAllLocal();
+      await deleteUser(user);
+      location.reload();
+    } catch (err) {
+      errEl.textContent = friendlyAuthError(err.code);
+      errEl.style.display = "block";
+      btn.disabled = false;
+    }
   });
 
   // Switch-account picker: purely a device-local convenience list (avatar +
