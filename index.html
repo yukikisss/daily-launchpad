@@ -2470,12 +2470,6 @@ if (typeof window.cowork !== "undefined") {
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
     document.getElementById("verifyReminder").style.display = "none";
-    const pendingEmail = sessionStorage.getItem("qc_pending_switch_email");
-    if (pendingEmail) {
-      document.getElementById("authEmail").value = pendingEmail;
-      sessionStorage.removeItem("qc_pending_switch_email");
-      setTimeout(() => document.getElementById("authPassword").focus(), 0);
-    }
     const e = document.getElementById("authError");
     if (msg) { e.textContent = msg; e.style.display = "block"; }
     else { e.style.display = "none"; }
@@ -2806,19 +2800,22 @@ if (typeof window.cowork !== "undefined") {
     }).join("");
   }
 
-  const PENDING_SWITCH_EMAIL_KEY = "qc_pending_switch_email";
-
-  function switchToAccountLogin(email) {
+  // Switching accounts signs out of the current one WITHOUT the full-page
+  // reload that a normal logout does — that way the email can just be filled
+  // straight into the still-live login form, no round trip through
+  // sessionStorage/reload timing to get it wrong.
+  async function switchToAccountLogin(email) {
     document.getElementById("switchOverlay").classList.remove("open");
     if (auth.currentUser) {
-      // Signing out reloads the page (doSignOut), which would wipe any field
-      // we fill in right now — so the email rides through the reload in
-      // sessionStorage instead, and showLogin() picks it up on the fresh load.
-      if (email) sessionStorage.setItem(PENDING_SWITCH_EMAIL_KEY, email);
-      else sessionStorage.removeItem(PENDING_SWITCH_EMAIL_KEY);
-      doSignOut();
-      return;
+      const user = auth.currentUser;
+      upsertKnownAccount(user, getProfile());
+      clearAllLocal();
+      if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+      currentUid = null;
+      stopInactivityMonitor();
+      try { await signOut(auth); } catch (err) { /* fall through to showing the login form regardless */ }
     }
+    showLogin();
     if (authMode !== "login") document.getElementById("authToggleBtn").click();
     document.getElementById("authEmail").value = email;
     document.getElementById("authPassword").value = "";
