@@ -126,7 +126,28 @@
   @media (max-width: 760px) {
     .top-row { flex-direction: column; }
     .top-main { flex-basis: auto; width: 100%; max-width: 100%; }
-    .routine-col { width: 100%; }
+
+    /* 每日例行 + 今天可能想做 move off the page and become a slide-over drawer,
+       opened via the floating button — keeps "從這裡開始" immediately followed
+       by "隨手記錄" on narrow screens instead of two extra cards in between. */
+    .routine-fab { display: flex; }
+    .routine-drawer-backdrop.open { display: block; }
+    .routine-drawer-close { display: block; }
+    .routine-col {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: min(300px, 85vw);
+      height: 100vh;
+      background: #FAFAF8;
+      padding: 20px 16px 24px;
+      overflow-y: auto;
+      box-shadow: -6px 0 24px rgba(46,44,39,0.18);
+      z-index: 49;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+    }
+    .routine-col.open { transform: translateX(0); }
     .routine-panel { width: 100%; }
   }
 
@@ -407,6 +428,48 @@
     box-shadow: 0 4px 14px rgba(46,44,39,0.25);
   }
   #shutdownBtn:hover { background: #46433c; }
+
+  /* Floating toggle for 每日例行 / 今天可能想做 — only appears once the two-column
+     layout no longer fits (narrow window or phone), same breakpoint that turns
+     .routine-col into a slide-over drawer below. Hidden entirely otherwise. */
+  .routine-fab {
+    display: none;
+    position: fixed;
+    right: 20px;
+    bottom: 84px;
+    z-index: 20;
+    width: 48px;
+    height: 48px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #C6613F;
+    color: #fff;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(46,44,39,0.25);
+  }
+  .routine-fab:hover { background: #AE5133; }
+  .routine-drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(46,44,39,0.4);
+    z-index: 48;
+  }
+  .routine-drawer-close {
+    display: none;
+    background: none;
+    border: none;
+    color: #8A8878;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    align-self: flex-end;
+    padding: 0 2px 4px;
+  }
+  .routine-drawer-close:hover { color: #C6613F; }
 
   /* History */
   details.history { max-width: 640px; }
@@ -959,7 +1022,8 @@
       </details>
     </div>
 
-    <div class="routine-col">
+    <div class="routine-col" id="routineCol">
+      <button type="button" id="routineDrawerCloseBtn" class="routine-drawer-close" title="關閉">×</button>
       <div class="routine-panel">
         <h2 class="routine-heading">每日例行</h2>
         <div class="routine-hint">只紀錄最近日常最重要的三件事</div>
@@ -985,6 +1049,8 @@
 </div>
 
 <button id="shutdownBtn" style="display:none;">結束今天</button>
+<button type="button" id="routineFab" class="routine-fab" style="display:none;" title="每日例行・今天可能想做">📋</button>
+<div class="routine-drawer-backdrop" id="routineDrawerBackdrop"></div>
 
 <input type="file" id="attachFileInput" style="display:none" />
 <input type="file" id="newAttachFileInput" style="display:none" />
@@ -2213,6 +2279,22 @@ window.initApp = function () {
     }
   });
 
+  // On narrow screens 每日例行 + 今天可能想做 live off-canvas as a slide-over
+  // drawer, opened via the floating 📋 button — see the matching CSS in the
+  // 760px media query. At wide widths this button is hidden by CSS and these
+  // handlers are simply inert.
+  function openRoutineDrawer() {
+    document.getElementById("routineCol").classList.add("open");
+    document.getElementById("routineDrawerBackdrop").classList.add("open");
+  }
+  function closeRoutineDrawer() {
+    document.getElementById("routineCol").classList.remove("open");
+    document.getElementById("routineDrawerBackdrop").classList.remove("open");
+  }
+  document.getElementById("routineFab").addEventListener("click", openRoutineDrawer);
+  document.getElementById("routineDrawerBackdrop").addEventListener("click", closeRoutineDrawer);
+  document.getElementById("routineDrawerCloseBtn").addEventListener("click", closeRoutineDrawer);
+
   // A file staged via the 📎 next to the capture box, waiting to be attached
   // to whatever gets added next.
   let pendingNewAttachment = null;
@@ -2525,6 +2607,7 @@ if (typeof window.cowork !== "undefined") {
   document.getElementById("authBar").style.display = "none";
   document.querySelector(".wrap").style.display = "";
   document.getElementById("shutdownBtn").style.display = "";
+  document.getElementById("routineFab").style.display = "";
   window.initApp();
 }
 </script>
@@ -2721,6 +2804,9 @@ if (typeof window.cowork !== "undefined") {
     document.getElementById("authBar").style.display = "none";
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
+    document.getElementById("routineFab").style.display = "none";
+    document.getElementById("routineCol").classList.remove("open");
+    document.getElementById("routineDrawerBackdrop").classList.remove("open");
     document.getElementById("verifyReminder").style.display = "none";
     inSwitchFlow = false;
     document.getElementById("switchCancelRow").style.display = "none";
@@ -2767,6 +2853,7 @@ if (typeof window.cowork !== "undefined") {
     document.getElementById("authBar").style.display = "none";
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
+    document.getElementById("routineFab").style.display = "none";
     document.getElementById("verifySub").textContent =
       `我們寄了一封驗證信到 ${user.email}，點裡面的連結後回來這裡按「我已驗證」。第一次的信有時候會延遲或收不到，如果等了幾分鐘還是沒看到（記得連垃圾郵件夾一起找），直接按下面的「重寄驗證信」通常第二次就會收到。`;
     document.getElementById("verifyError").style.display = "none";
@@ -2849,6 +2936,7 @@ if (typeof window.cowork !== "undefined") {
     inSwitchFlow = false;
     document.querySelector(".wrap").style.display = "";
     document.getElementById("shutdownBtn").style.display = "";
+    document.getElementById("routineFab").style.display = "";
     document.getElementById("authBar").style.display = "block";
     currentEmail = email || "";
     renderProfileChip();
