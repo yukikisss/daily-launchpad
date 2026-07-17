@@ -2225,6 +2225,27 @@ if (typeof window.cowork !== "undefined") {
     else { e.style.display = "none"; }
   }
 
+  let resendCooldownTimer = null;
+  const RESEND_LABEL = "重寄驗證信";
+
+  function startResendCooldown(seconds) {
+    const btn = document.getElementById("resendVerifyBtn");
+    let remaining = seconds;
+    btn.disabled = true;
+    btn.textContent = `${RESEND_LABEL}（${remaining}s）`;
+    clearInterval(resendCooldownTimer);
+    resendCooldownTimer = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(resendCooldownTimer);
+        btn.disabled = false;
+        btn.textContent = RESEND_LABEL;
+      } else {
+        btn.textContent = `${RESEND_LABEL}（${remaining}s）`;
+      }
+    }, 1000);
+  }
+
   function showVerify(user) {
     document.getElementById("authOverlay").classList.add("open");
     document.getElementById("authLoginView").style.display = "none";
@@ -2233,8 +2254,12 @@ if (typeof window.cowork !== "undefined") {
     document.querySelector(".wrap").style.display = "none";
     document.getElementById("shutdownBtn").style.display = "none";
     document.getElementById("verifySub").textContent =
-      `我們寄了一封驗證信到 ${user.email}，點裡面的連結後回來這裡按「我已驗證」。`;
+      `我們寄了一封驗證信到 ${user.email}，點裡面的連結後回來這裡按「我已驗證」。第一次的信有時候會延遲或收不到，如果等了幾分鐘還是沒看到（記得連垃圾郵件夾一起找），直接按下面的「重寄驗證信」通常第二次就會收到。`;
     document.getElementById("verifyError").style.display = "none";
+    clearInterval(resendCooldownTimer);
+    const btn = document.getElementById("resendVerifyBtn");
+    btn.disabled = false;
+    btn.textContent = RESEND_LABEL;
   }
 
   let currentEmail = "";
@@ -2489,11 +2514,11 @@ if (typeof window.cowork !== "undefined") {
       errEl.style.color = "#6B6A63";
       errEl.textContent = "已經重新寄出，記得看一下垃圾郵件夾";
       errEl.style.display = "block";
+      startResendCooldown(40); // matches Firebase's own short-lived rate limit on repeated sends
     } catch (err) {
       errEl.style.color = "#C6613F";
-      errEl.textContent = "寄送失敗，稍等一下再試";
+      errEl.textContent = err.code === "auth/too-many-requests" ? "寄太多次了，稍等一下再試" : "寄送失敗，稍等一下再試";
       errEl.style.display = "block";
-    } finally {
       btn.disabled = false;
     }
   });
