@@ -35,6 +35,7 @@
     padding: 16px 16px 14px;
   }
   .routine-heading { font-size: 14px; font-weight: 700; margin: 0 0 4px; color: #2E2C27; }
+  .routine-hint { font-size: 11px; color: #ABA998; margin: 0 0 8px; }
   .routine-progress { font-size: 12px; color: #8A8878; margin-bottom: 10px; }
   .routine-list { list-style: none; padding: 0; margin: 0 0 10px; }
   .routine-item {
@@ -696,9 +697,10 @@
 
     <div class="routine-panel">
       <h2 class="routine-heading">每日例行</h2>
+      <div class="routine-hint">只紀錄最近日常最重要的三件事</div>
       <div class="routine-progress" id="routineProgress"></div>
       <ul class="routine-list" id="routineList"></ul>
-      <div class="routine-add-row">
+      <div class="routine-add-row" id="routineAddRow">
         <input id="routineInput" type="text" placeholder="新增例行事項…" />
         <button id="routineAddBtn" type="button">+</button>
       </div>
@@ -778,6 +780,7 @@ window.initApp = function () {
   const LS_ROUTINES = "qc_routines_v1";
   const LS_ROUTINE_LOG = "qc_routine_log_v1";
   const DEFAULT_CATEGORY = "未分類";
+  const MAX_ROUTINES = 3;
   const MAX_DAYS_SHOWN = 30;
 
   // For night-owl work sessions: anything before this hour still counts as
@@ -1882,6 +1885,10 @@ window.initApp = function () {
     const progressEl = document.getElementById("routineProgress");
     const todayLog = routineLog[tk] || {};
 
+    // Only room to add another once there's fewer than the 3-item cap —
+    // keeps the daily routine list to just the handful that actually matter.
+    document.getElementById("routineAddRow").style.display = routines.length < MAX_ROUTINES ? "flex" : "none";
+
     if (!routines.length) {
       listEl.innerHTML = `<div class="routine-empty">還沒有例行事項，加一個每天想做的小事吧，例如「喝水」「運動 10 分鐘」。</div>`;
       progressEl.textContent = "";
@@ -1925,6 +1932,10 @@ window.initApp = function () {
 
   function addRoutine(text) {
     if (!text.trim()) return;
+    if (routines.length >= MAX_ROUTINES) {
+      showToast(`每天最多只記錄 ${MAX_ROUTINES} 件例行事項，先刪一個舊的再加新的`);
+      return;
+    }
     routines.push({ id: uid(), text: text.trim(), createdAt: Date.now() });
     saveRoutines(routines);
     renderRoutines();
