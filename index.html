@@ -405,7 +405,7 @@
   .field { margin-bottom: 14px; }
   .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
   .field .hint { font-weight: 400; color: #ABA998; }
-  .field textarea, .field input[type="text"] {
+  .field textarea, .field input[type="text"], .field input[type="password"] {
     width: 100%;
     padding: 10px 11px;
     border: 1px solid #DEDCD2;
@@ -544,10 +544,53 @@
     font-size: 14px; line-height: 1; padding: 0 2px;
   }
   .new-attach-preview button:hover { color: #C6613F; }
+
+  /* Login gate */
+  #authOverlay { z-index: 50; }
+  #authBar {
+    display: none;
+    position: fixed;
+    top: 12px;
+    right: 16px;
+    font-size: 12px;
+    color: #8A8878;
+    z-index: 15;
+    background: #FFFFFF;
+    border: 1px solid #E9E8E1;
+    border-radius: 999px;
+    padding: 6px 12px;
+  }
+  #authLogoutBtn {
+    background: none; border: none; color: #C6613F; cursor: pointer;
+    font-size: 12px; padding: 0; margin-left: 6px; font-weight: 600;
+  }
+  .auth-error { color: #C6613F; font-size: 13px; margin: -6px 0 14px; display: none; }
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="overlay open" id="authOverlay">
+  <div class="modal" style="max-width:360px;">
+    <h3 id="authTitle">登入</h3>
+    <div class="sub" id="authSub">用 Email 登入，資料就會自動跨裝置同步。</div>
+    <div class="field">
+      <label>Email</label>
+      <input type="text" id="authEmail" placeholder="you@example.com" autocomplete="username" />
+    </div>
+    <div class="field" style="margin-bottom:8px;">
+      <label>密碼</label>
+      <input type="password" id="authPassword" placeholder="至少 6 個字元" autocomplete="current-password" />
+    </div>
+    <div class="auth-error" id="authError"></div>
+    <div class="modal-actions" style="justify-content:space-between; align-items:center;">
+      <button class="btn-secondary" id="authToggleBtn" type="button">改成註冊新帳號</button>
+      <button class="btn-primary" id="authSubmitBtn" type="button">登入</button>
+    </div>
+  </div>
+</div>
+<div id="authBar"><span id="authEmailLabel"></span><button id="authLogoutBtn" type="button">登出</button></div>
+
+<div class="wrap" style="display:none;">
   <div class="date-line" id="dateLine"></div>
   <h1>今日啟動台</h1>
   <div class="greeting" id="greeting"></div>
@@ -586,7 +629,7 @@
   </details>
 </div>
 
-<button id="shutdownBtn">結束今天</button>
+<button id="shutdownBtn" style="display:none;">結束今天</button>
 
 <input type="file" id="attachFileInput" style="display:none" />
 <input type="file" id="newAttachFileInput" style="display:none" />
@@ -633,7 +676,7 @@
 </div>
 
 <script>
-(function () {
+window.initApp = function () {
   const LS_CAPTURES = "qc_captures_v1";
   const LS_HISTORY = "qc_history_v1";
   const LS_CATEGORIES = "qc_categories_v1";
@@ -678,6 +721,7 @@
   }
   function saveCaptures(obj) {
     localStorage.setItem(LS_CAPTURES, JSON.stringify(obj));
+    if (window.__cloudPush) window.__cloudPush();
   }
   function loadHistory() {
     try { return JSON.parse(localStorage.getItem(LS_HISTORY) || "[]"); }
@@ -685,6 +729,7 @@
   }
   function saveHistory(arr) {
     localStorage.setItem(LS_HISTORY, JSON.stringify(arr));
+    if (window.__cloudPush) window.__cloudPush();
   }
   function loadCategories() {
     try {
@@ -695,6 +740,7 @@
   }
   function saveCategories(arr) {
     localStorage.setItem(LS_CATEGORIES, JSON.stringify(arr));
+    if (window.__cloudPush) window.__cloudPush();
   }
   function loadCatKeywords() {
     try {
@@ -705,6 +751,7 @@
   }
   function saveCatKeywords(obj) {
     localStorage.setItem(LS_CAT_KEYWORDS, JSON.stringify(obj));
+    if (window.__cloudPush) window.__cloudPush();
   }
   function loadRoutines() {
     try {
@@ -715,6 +762,7 @@
   }
   function saveRoutines(arr) {
     localStorage.setItem(LS_ROUTINES, JSON.stringify(arr));
+    if (window.__cloudPush) window.__cloudPush();
   }
   function loadRoutineLog() {
     try {
@@ -725,6 +773,7 @@
   }
   function saveRoutineLog(obj) {
     localStorage.setItem(LS_ROUTINE_LOG, JSON.stringify(obj));
+    if (window.__cloudPush) window.__cloudPush();
   }
 
   function uid() {
@@ -1957,7 +2006,202 @@
   renderItems();
   renderHistory();
   renderRoutines();
-})();
+};
+</script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+    createUserWithEmailAndPassword, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFirestore, doc, onSnapshot, setDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAdygkR6stCwRBYC1W91aiWAWoKsfqt268",
+    authDomain: "daily-launchpad.firebaseapp.com",
+    projectId: "daily-launchpad",
+    storageBucket: "daily-launchpad.firebasestorage.app",
+    messagingSenderId: "833576221930",
+    appId: "1:833576221930:web:112aef7828dbfb565ceb93",
+    measurementId: "G-KBF4K3735B"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  // Identifies writes made by *this* browser tab this session, so its own
+  // Firestore write echoing back through onSnapshot doesn't trigger a
+  // pointless reload — only a change that genuinely came from elsewhere does.
+  const SESSION_ID = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+  const LS_KEYS = {
+    captures: "qc_captures_v1",
+    history: "qc_history_v1",
+    categories: "qc_categories_v1",
+    catKeywords: "qc_cat_keywords_v1",
+    routines: "qc_routines_v1",
+    routineLog: "qc_routine_log_v1"
+  };
+
+  function readAllLocal() {
+    const out = {};
+    Object.keys(LS_KEYS).forEach(k => {
+      try { out[k] = JSON.parse(localStorage.getItem(LS_KEYS[k]) || "null"); }
+      catch (e) { out[k] = null; }
+    });
+    if (!out.captures || typeof out.captures !== "object") out.captures = {};
+    if (!Array.isArray(out.history)) out.history = [];
+    if (!Array.isArray(out.categories) || !out.categories.length) out.categories = ["未分類"];
+    if (!out.catKeywords || typeof out.catKeywords !== "object") out.catKeywords = {};
+    if (!Array.isArray(out.routines)) out.routines = [];
+    if (!out.routineLog || typeof out.routineLog !== "object") out.routineLog = {};
+    return out;
+  }
+
+  function writeAllLocal(data) {
+    Object.keys(LS_KEYS).forEach(k => {
+      if (data[k] !== undefined) localStorage.setItem(LS_KEYS[k], JSON.stringify(data[k]));
+    });
+  }
+
+  let currentUid = null;
+  let pushTimer = null;
+
+  // Debounced push: every save*() call in the main app triggers this, so any
+  // add/edit/delete/drag/checkbox change gets mirrored to Firestore shortly after.
+  function scheduleCloudPush() {
+    if (!currentUid) return;
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => {
+      const data = readAllLocal();
+      setDoc(doc(db, "users", currentUid), Object.assign({}, data, {
+        writerId: SESSION_ID,
+        updatedAt: serverTimestamp()
+      }), { merge: true }).catch(err => console.error("cloud sync failed", err));
+    }, 250);
+  }
+  window.__cloudPush = scheduleCloudPush;
+
+  function showLogin(msg) {
+    document.getElementById("authOverlay").classList.add("open");
+    document.getElementById("authBar").style.display = "none";
+    document.querySelector(".wrap").style.display = "none";
+    document.getElementById("shutdownBtn").style.display = "none";
+    const e = document.getElementById("authError");
+    if (msg) { e.textContent = msg; e.style.display = "block"; }
+    else { e.style.display = "none"; }
+  }
+
+  function revealApp(email) {
+    document.getElementById("authOverlay").classList.remove("open");
+    document.querySelector(".wrap").style.display = "";
+    document.getElementById("shutdownBtn").style.display = "";
+    document.getElementById("authBar").style.display = "flex";
+    document.getElementById("authEmailLabel").textContent = email || "";
+  }
+
+  let unsubSnap = null;
+
+  onAuthStateChanged(auth, (user) => {
+    if (unsubSnap) { unsubSnap(); unsubSnap = null; }
+    if (!user) {
+      currentUid = null;
+      showLogin();
+      return;
+    }
+    currentUid = user.uid;
+    let firstSnapshot = true;
+    const ref = doc(db, "users", user.uid);
+    unsubSnap = onSnapshot(ref, async (snap) => {
+      if (!snap.exists()) {
+        // Brand-new account: seed the cloud doc from whatever is (or isn't) already local.
+        await setDoc(ref, Object.assign({}, readAllLocal(), {
+          writerId: SESSION_ID,
+          updatedAt: serverTimestamp()
+        }));
+        return; // onSnapshot fires again now that the doc exists
+      }
+      const data = snap.data();
+      if (firstSnapshot) {
+        firstSnapshot = false;
+        writeAllLocal(data);
+        revealApp(user.email);
+        window.initApp();
+        return;
+      }
+      if (data.writerId === SESSION_ID) return; // echo of our own write — local state already matches
+      // A change arrived from another device/session — reload so every render
+      // path picks it up cleanly instead of trying to patch live state.
+      writeAllLocal(data);
+      location.reload();
+    }, (err) => {
+      console.error(err);
+      showLogin("同步時發生問題，檢查一下網路後重新整理試試");
+    });
+  });
+
+  function friendlyAuthError(code) {
+    const map = {
+      "auth/invalid-email": "Email 格式不對，檢查一下",
+      "auth/user-not-found": "找不到這個帳號，要不要改成「註冊新帳號」？",
+      "auth/wrong-password": "密碼不對，再試一次",
+      "auth/invalid-credential": "帳號或密碼不對，再確認一次",
+      "auth/email-already-in-use": "這個 Email 已經註冊過了，改成「登入」試試",
+      "auth/weak-password": "密碼至少要 6 個字元",
+      "auth/too-many-requests": "嘗試太多次了，稍等一下再試"
+    };
+    return map[code] || ("發生錯誤：" + code);
+  }
+
+  let authMode = "login";
+  document.getElementById("authToggleBtn").addEventListener("click", () => {
+    authMode = authMode === "login" ? "signup" : "login";
+    document.getElementById("authTitle").textContent = authMode === "login" ? "登入" : "註冊新帳號";
+    document.getElementById("authSubmitBtn").textContent = authMode === "login" ? "登入" : "註冊";
+    document.getElementById("authToggleBtn").textContent = authMode === "login" ? "改成註冊新帳號" : "改成登入";
+    document.getElementById("authError").style.display = "none";
+  });
+
+  async function submitAuth() {
+    const email = document.getElementById("authEmail").value.trim();
+    const password = document.getElementById("authPassword").value;
+    const errEl = document.getElementById("authError");
+    errEl.style.display = "none";
+    if (!email || !password) {
+      errEl.textContent = "請輸入 Email 和密碼";
+      errEl.style.display = "block";
+      return;
+    }
+    const btn = document.getElementById("authSubmitBtn");
+    btn.disabled = true;
+    try {
+      if (authMode === "login") {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
+      }
+    } catch (err) {
+      errEl.textContent = friendlyAuthError(err.code);
+      errEl.style.display = "block";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+  document.getElementById("authSubmitBtn").addEventListener("click", submitAuth);
+  document.getElementById("authPassword").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitAuth();
+  });
+  document.getElementById("authEmail").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") document.getElementById("authPassword").focus();
+  });
+
+  document.getElementById("authLogoutBtn").addEventListener("click", () => {
+    signOut(auth).then(() => location.reload());
+  });
 </script>
 </body>
 </html>
