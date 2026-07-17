@@ -622,7 +622,7 @@
   }
   #profileLogoutBtn { color: #C6613F; text-align: center; font-weight: 600; }
 
-  #syncOverlay { z-index: 45; }
+  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay { z-index: 45; }
   .modal-close-x {
     position: absolute;
     top: 12px;
@@ -772,7 +772,18 @@
     <span class="profile-chip-name" id="profileChipName"></span>
   </button>
   <div class="profile-dropdown" id="profileDropdown">
-    <div class="profile-dropdown-avatar">
+    <button type="button" class="context-menu-item" id="openProfileBtn">👤 個人檔案</button>
+    <button type="button" class="context-menu-item" id="openSettingsBtn">⚙️ 設定</button>
+    <div class="context-menu-divider" style="margin:6px 0 8px;"></div>
+    <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
+  </div>
+</div>
+
+<div class="overlay" id="profileOverlay">
+  <div class="modal" style="max-width:360px; position:relative;">
+    <button type="button" id="profileOverlayCloseBtn" class="modal-close-x" title="關閉">×</button>
+    <h3>個人檔案</h3>
+    <div class="profile-dropdown-avatar" style="margin-top:14px;">
       <span class="profile-avatar profile-avatar-lg" id="profileAvatarWrapLg">
         <img id="profileAvatarImgLg" style="display:none;" />
         <span id="profileAvatarInitialLg"></span>
@@ -780,16 +791,23 @@
       <button type="button" id="avatarUploadBtn" class="btn-secondary" style="font-size:12px; padding:6px 10px;">上傳頭像</button>
       <input type="file" id="avatarFileInput" accept="image/*" style="display:none;" />
     </div>
-    <div class="field" style="margin:0 0 10px;">
+    <div class="field" style="margin:16px 0 10px;">
       <label style="font-size:12px;">顯示名稱</label>
       <input type="text" id="displayNameInput" placeholder="妳的名字" />
     </div>
     <div class="profile-email" id="profileEmailLabel"></div>
-    <div class="context-menu-divider" style="margin:0 0 6px;"></div>
-    <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
-    <button type="button" class="context-menu-item" id="switchAccountBtn">🔀 切換帳號</button>
-    <div class="context-menu-divider" style="margin:6px 0 8px;"></div>
-    <button type="button" class="context-menu-item" id="profileLogoutBtn">登出</button>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay">
+  <div class="modal" style="max-width:360px; position:relative;">
+    <button type="button" id="settingsOverlayCloseBtn" class="modal-close-x" title="關閉">×</button>
+    <h3>設定</h3>
+    <div class="sub">帳號同步與跨裝置相關的功能都在這裡。</div>
+    <div style="margin-top:14px;">
+      <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
+      <button type="button" class="context-menu-item" id="switchAccountBtn">🔀 切換帳號</button>
+    </div>
   </div>
 </div>
 
@@ -2765,6 +2783,33 @@ if (typeof window.cowork !== "undefined") {
     document.getElementById("profileDropdown").classList.remove("open");
   });
 
+  // The chip's dropdown is now just navigation — editing the avatar/nickname
+  // lives in its own "個人檔案" page, and the sync/switch-account actions
+  // live in a separate "設定" page, instead of everything crammed into one menu.
+  document.getElementById("openProfileBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("profileDropdown").classList.remove("open");
+    document.getElementById("profileOverlay").classList.add("open");
+  });
+  document.getElementById("profileOverlayCloseBtn").addEventListener("click", () => {
+    document.getElementById("profileOverlay").classList.remove("open");
+  });
+  document.getElementById("profileOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "profileOverlay") document.getElementById("profileOverlay").classList.remove("open");
+  });
+
+  document.getElementById("openSettingsBtn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("profileDropdown").classList.remove("open");
+    document.getElementById("settingsOverlay").classList.add("open");
+  });
+  document.getElementById("settingsOverlayCloseBtn").addEventListener("click", () => {
+    document.getElementById("settingsOverlay").classList.remove("open");
+  });
+  document.getElementById("settingsOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "settingsOverlay") document.getElementById("settingsOverlay").classList.remove("open");
+  });
+
   // Switch-account picker: purely a device-local convenience list (avatar +
   // nickname/email), never a login shortcut — picking a row still lands on
   // the login form with just the email pre-filled, password still required.
@@ -2819,7 +2864,7 @@ if (typeof window.cowork !== "undefined") {
     e.stopPropagation();
     renderKnownAccounts();
     document.getElementById("switchOverlay").classList.add("open");
-    document.getElementById("profileDropdown").classList.remove("open");
+    document.getElementById("settingsOverlay").classList.remove("open");
   });
   document.getElementById("switchCloseBtn").addEventListener("click", () => {
     document.getElementById("switchOverlay").classList.remove("open");
@@ -2892,7 +2937,7 @@ if (typeof window.cowork !== "undefined") {
     e.stopPropagation();
     resetSyncOverlay();
     document.getElementById("syncOverlay").classList.add("open");
-    document.getElementById("profileDropdown").classList.remove("open");
+    document.getElementById("settingsOverlay").classList.remove("open");
   });
   document.getElementById("syncCloseBtn").addEventListener("click", () => {
     document.getElementById("syncOverlay").classList.remove("open");
