@@ -753,7 +753,10 @@
   }
   #profileLogoutBtn { color: #C6613F; font-weight: 600; }
 
-  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay, #langOverlay { z-index: 46; }
+  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay { z-index: 46; }
+  /* Reachable from both the pre-login auth screen (z-index 50) and the
+     post-login settings menu, so it needs to outrank everything else. */
+  #langOverlay { z-index: 55; }
   .modal-close-x {
     position: absolute;
     top: 12px;
@@ -767,6 +770,20 @@
     padding: 2px 6px;
   }
   .modal-close-x:hover { color: #C6613F; }
+  .auth-lang-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: #F1F0EA;
+    border: none;
+    border-radius: 999px;
+    color: #6B6A63;
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 7px 10px;
+  }
+  .auth-lang-btn:hover { background: #EFEEE7; color: #C6613F; }
 
   .account-row {
     display: flex;
@@ -843,7 +860,8 @@
 <body>
 
 <div class="overlay open" id="authOverlay">
-  <div class="modal" style="max-width:360px;">
+  <div class="modal" style="max-width:360px; position:relative;">
+    <button type="button" id="authLangBtn" class="auth-lang-btn" title="Language / 語言 / 语言 / 언어 / Idioma">🌐</button>
     <div id="authLoginView">
       <h3 id="authTitle">登入</h3>
       <div class="sub" id="authSub">用 Email 登入，資料就會自動跨裝置同步。</div>
@@ -1923,7 +1941,7 @@ applyStaticI18n();
 // row and this picker's own title are hardcoded in every script simultaneously
 // (see the HTML) so someone who can't read the current UI language can still
 // recognize their own language's name and find their way here.
-document.getElementById("openLanguageBtn").addEventListener("click", () => {
+function openLangPicker() {
   const listEl = document.getElementById("langOptionList");
   listEl.innerHTML = LANGS.map(code => `
     <button type="button" class="context-menu-item" data-lang="${code}" style="display:flex; align-items:center; justify-content:space-between;">
@@ -1931,8 +1949,16 @@ document.getElementById("openLanguageBtn").addEventListener("click", () => {
       <span style="color:#C6613F;">${code === currentLang ? "✓" : ""}</span>
     </button>
   `).join("");
-  document.getElementById("settingsOverlay").classList.remove("open");
   document.getElementById("langOverlay").classList.add("open");
+}
+document.getElementById("openLanguageBtn").addEventListener("click", () => {
+  document.getElementById("settingsOverlay").classList.remove("open");
+  openLangPicker();
+});
+// Also reachable straight from the login/signup screen — someone who can't
+// read the current UI language shouldn't be stuck before they even log in.
+document.getElementById("authLangBtn").addEventListener("click", () => {
+  openLangPicker();
 });
 document.getElementById("langCloseBtn").addEventListener("click", () => {
   document.getElementById("langOverlay").classList.remove("open");
