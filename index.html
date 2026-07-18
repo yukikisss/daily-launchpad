@@ -1270,6 +1270,7 @@ const I18N = {
     reco_empty_all_added: "沒有更多預測啦",
     reco_add_title: "加入今天",
     reco_locked_sub: "升級 Pro 解鎖智能推薦", reco_locked_btn: "升級解鎖",
+    reco_generic_reason: "新手推薦",
     error_sync_problem: "同步時發生問題，檢查一下網路後重新整理試試",
     auth_error_invalid_email: "Email 格式不對，檢查一下",
     auth_error_user_not_found: "找不到這個帳號，要不要改成「註冊新帳號」？",
@@ -1396,6 +1397,7 @@ const I18N = {
     reco_empty_all_added: "没有更多预测啦",
     reco_add_title: "加入今天",
     reco_locked_sub: "升级 Pro 解锁智能推荐", reco_locked_btn: "升级解锁",
+    reco_generic_reason: "新手推荐",
     error_sync_problem: "同步时发生问题，检查一下网路后重新整理试试",
     auth_error_invalid_email: "Email 格式不对，检查一下",
     auth_error_user_not_found: "找不到这个账号，要不要改成「注册新账号」？",
@@ -1522,6 +1524,7 @@ const I18N = {
     reco_empty_all_added: "No more suggestions for now",
     reco_add_title: "Add to today",
     reco_locked_sub: "Upgrade to Pro to unlock smart suggestions", reco_locked_btn: "Upgrade to unlock",
+    reco_generic_reason: "Good starting point",
     error_sync_problem: "Something went wrong syncing — check your connection and refresh",
     auth_error_invalid_email: "That email format doesn't look right",
     auth_error_user_not_found: "Can't find this account — want to switch to \"Create an account\"?",
@@ -1648,6 +1651,7 @@ const I18N = {
     reco_empty_all_added: "더 이상 추천할 게 없어요",
     reco_add_title: "오늘에 추가",
     reco_locked_sub: "Pro로 업그레이드하면 스마트 추천이 해제돼요", reco_locked_btn: "업그레이드",
+    reco_generic_reason: "시작하기 좋은 항목",
     error_sync_problem: "동기화 중 문제가 발생했어요. 네트워크를 확인하고 새로고침해보세요",
     auth_error_invalid_email: "이메일 형식이 올바르지 않아요",
     auth_error_user_not_found: "이 계정을 찾을 수 없어요. \"새 계정 만들기\"로 전환할까요?",
@@ -1774,6 +1778,7 @@ const I18N = {
     reco_empty_all_added: "No hay más sugerencias por ahora",
     reco_add_title: "Añadir a hoy",
     reco_locked_sub: "Mejora a Pro para desbloquear sugerencias inteligentes", reco_locked_btn: "Mejorar para desbloquear",
+    reco_generic_reason: "Buen punto de partida",
     error_sync_problem: "Hubo un problema al sincronizar — revisa tu conexión y recarga la página",
     auth_error_invalid_email: "El formato del correo no es válido",
     auth_error_user_not_found: "No encontramos esta cuenta — ¿quieres cambiar a \"Crear una cuenta\"?",
@@ -2190,6 +2195,12 @@ window.initApp = function () {
   const DEFAULT_CATEGORY = "未分類";
   const MAX_ROUTINES = 3;
   const MAX_DAYS_SHOWN = 30;
+  // Below this many distinct days with at least one capture, there's not
+  // enough real history for the pattern-based analysis in
+  // computeRecommendations() to find anything (it needs multiple weeks to
+  // spot a recurring weekday, for instance) — so a brand-new user gets
+  // generic starter suggestions instead until they cross this threshold.
+  const MIN_DAYS_FOR_ANALYSIS = 3;
 
   // For night-owl work sessions: anything before this hour still counts as
   // "yesterday" — so a late-night or early-morning "結束今天" (or a capture with
@@ -2603,6 +2614,54 @@ window.initApp = function () {
     chores: { "zh-Hant": "家務", "zh-Hans": "家务", en: "Chores", ko: "집안일", es: "Tareas del hogar" },
     finance: { "zh-Hant": "財務", "zh-Hans": "财务", en: "Finance", ko: "재정", es: "Finanzas" },
     social: { "zh-Hant": "社交", "zh-Hans": "社交", en: "Social", ko: "사교", es: "Social" }
+  };
+  // Generic, low-friction starter suggestions for "今天可能想做" while a
+  // brand-new user is still under MIN_DAYS_FOR_ANALYSIS days of real history
+  // — see computeRecommendations() below for where these get used. `cat` is
+  // a SEED_CATEGORY_NAMES id (or null for 未分類/DEFAULT_CATEGORY), resolved
+  // to a localized display name at render time, same as the auto-tagging
+  // seed dictionary above.
+  const GENERIC_STARTER_SUGGESTIONS = {
+    "zh-Hant": [
+      { text: "喝一杯水", cat: "health" },
+      { text: "起來動一動、伸展五分鐘", cat: "health" },
+      { text: "整理一下書桌", cat: "chores" },
+      { text: "檢查今天的行事曆", cat: "work" },
+      { text: "回覆一封還沒回的訊息", cat: "social" },
+      { text: "寫下今天最想完成的一件事", cat: null }
+    ],
+    "zh-Hans": [
+      { text: "喝一杯水", cat: "health" },
+      { text: "起来动一动、伸展五分钟", cat: "health" },
+      { text: "整理一下书桌", cat: "chores" },
+      { text: "检查今天的日程", cat: "work" },
+      { text: "回复一条还没回的消息", cat: "social" },
+      { text: "写下今天最想完成的一件事", cat: null }
+    ],
+    en: [
+      { text: "Drink a glass of water", cat: "health" },
+      { text: "Get up and stretch for 5 minutes", cat: "health" },
+      { text: "Tidy your desk", cat: "chores" },
+      { text: "Check today's calendar", cat: "work" },
+      { text: "Reply to a message you've been putting off", cat: "social" },
+      { text: "Write down the one thing you most want to finish today", cat: null }
+    ],
+    ko: [
+      { text: "물 한 잔 마시기", cat: "health" },
+      { text: "일어나서 5분 동안 스트레칭하기", cat: "health" },
+      { text: "책상 정리하기", cat: "chores" },
+      { text: "오늘 일정 확인하기", cat: "work" },
+      { text: "미뤄둔 메시지에 답장하기", cat: "social" },
+      { text: "오늘 가장 끝내고 싶은 일 하나 적어보기", cat: null }
+    ],
+    es: [
+      { text: "Bebe un vaso de agua", cat: "health" },
+      { text: "Levántate y estira 5 minutos", cat: "health" },
+      { text: "Ordena tu escritorio", cat: "chores" },
+      { text: "Revisa tu calendario de hoy", cat: "work" },
+      { text: "Responde un mensaje pendiente", cat: "social" },
+      { text: "Escribe lo único que más quieres terminar hoy", cat: null }
+    ]
   };
   // Precomputed once at startup: { work: { token: 1, ... }, ... } — built with
   // the exact same tokenizer real capture text goes through, so a seed entry
@@ -3784,6 +3843,14 @@ window.initApp = function () {
     return (t || "").trim().toLowerCase();
   }
 
+  // How many distinct calendar days have at least one capture logged —
+  // the real bar computeRecommendations() below needs multiple weeks of
+  // history to find a recurring pattern; this is a much lower, reachable
+  // threshold that just decides whether to even attempt that analysis yet.
+  function daysWithCaptureData() {
+    return Object.keys(captures).filter(k => (captures[k] || []).length > 0).length;
+  }
+
   function computeRecommendations() {
     const todaySet = new Set((captures[tk] || []).map(it => normText(it.text)));
     const seen = new Set();
@@ -3796,6 +3863,21 @@ window.initApp = function () {
       if (todaySet.has(norm) || seen.has(norm)) return;
       seen.add(norm);
       results.push({ text: (text || "").trim(), category: category || DEFAULT_CATEGORY, reason, addable, sentence });
+    }
+
+    // Not enough real history yet for the pattern analysis below to find
+    // anything — offer generic, low-friction starter suggestions instead of
+    // just telling a brand-new user "not enough data" for their first
+    // several days. These use the same addResult() de-dupe against today's
+    // list, so once you've added one it won't be offered again.
+    if (daysWithCaptureData() < MIN_DAYS_FOR_ANALYSIS) {
+      const list = GENERIC_STARTER_SUGGESTIONS[currentLang] || GENERIC_STARTER_SUGGESTIONS["zh-Hant"];
+      list.forEach(({ text, cat }) => {
+        const names = cat && SEED_CATEGORY_NAMES[cat];
+        const category = names ? (names[currentLang] || names["zh-Hant"]) : DEFAULT_CATEGORY;
+        addResult(text, category, t("reco_generic_reason"), true);
+      });
+      return { items: results.slice(0, 5), candidateCount };
     }
 
     const todayWeekday = effectiveNow().getDay();
@@ -4011,6 +4093,17 @@ if (typeof window.cowork !== "undefined") {
   const db = getFirestore(app);
   const functionsClient = getFunctions(app);
 
+  // Hand-picked "just give this account everything" allowlist — no Cloud
+  // Functions, no Blaze plan, no payment involved at all. Checked purely
+  // client-side against the signed-in account's email; deliberately kept
+  // completely separate from the Stripe/redeemCode machinery below so it
+  // still works even if that backend is never deployed. Add/remove emails
+  // here directly (all lowercase) and re-upload — that's the whole process.
+  const FREE_ACCESS_EMAILS = ["yukimia@yeah.net", "1282451107@qq.com","630503008q@gmail.com"];
+  function isAllowlistedEmail(email) {
+    return FREE_ACCESS_EMAILS.includes((email || "").trim().toLowerCase());
+  }
+
   // Subscription status mirrored from users/{uid}.subscription (written only
   // by the Cloud Functions in functions/index.js — never by this client) so
   // the classic script can gate paid features without importing Firebase
@@ -4018,10 +4111,15 @@ if (typeof window.cowork !== "undefined") {
   let currentSubscription = { status: "none" };
   window.__getSubscription = () => currentSubscription;
   function applySubscription(data) {
-    currentSubscription = (data && data.subscription) || { status: "none" };
+    let sub = (data && data.subscription) || { status: "none" };
+    if (isAllowlistedEmail(currentUserEmail)) {
+      sub = Object.assign({}, sub, { status: "active", source: "manual-allowlist" });
+    }
+    currentSubscription = sub;
     if (window.__i18nRerender) window.__i18nRerender();
   }
   function cloudRestoreUnlocked(data) {
+    if (isAllowlistedEmail(currentUserEmail)) return true;
     const s = data && data.subscription && data.subscription.status;
     return s === "active" || s === "trialing";
   }
