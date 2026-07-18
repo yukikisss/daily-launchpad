@@ -992,6 +992,13 @@
         <button class="btn-secondary" type="button" id="planAnnualBtn" style="width:100%;">年繳升級（省 15%）</button>
       </div>
       <div id="planTrialNote" style="font-size:12px; color:#6B6A63; margin-top:10px; text-align:center;">7 天免費試用，到期前可隨時取消。</div>
+      <div style="text-align:center; margin-top:14px;">
+        <button type="button" id="planRedeemToggle" style="background:none; border:none; color:#6B6A63; font-size:12px; text-decoration:underline; cursor:pointer; padding:4px;">有兌換碼？</button>
+      </div>
+      <div id="planRedeemForm" style="display:none; margin-top:8px; gap:8px; flex-direction:column;">
+        <input type="text" id="planRedeemInput" placeholder="輸入兌換碼" style="padding:8px 10px; border:1px solid #DEDCD2; border-radius:6px; font-size:13px; font-family:inherit; outline:none;" />
+        <button type="button" id="planRedeemConfirmBtn" class="btn-secondary" style="width:100%;">兌換</button>
+      </div>
     </div>
     <div id="planActiveView" style="display:none;">
       <div class="sub" id="planActiveSub">妳目前是 Pro 會員，已解鎖跨裝置同步和智能推薦。</div>
@@ -1190,6 +1197,9 @@ const I18N = {
     plan_trial_note: "7 天免費試用，到期前可隨時取消。",
     plan_active_sub: "妳目前是 Pro 會員，已解鎖跨裝置同步和智能推薦。",
     plan_manage_btn: "管理訂閱", plan_error_generic: "發生錯誤，請稍後再試。",
+    plan_redeem_toggle: "有兌換碼？", plan_redeem_placeholder: "輸入兌換碼",
+    plan_redeem_confirm_btn: "兌換", plan_redeem_success: "兌換成功！付費功能已解鎖",
+    plan_redeem_invalid: "兌換碼無效或已達使用上限",
     settings_language: "🌐 語言",
     delete_account_warning: "註銷帳號會永久刪除妳的所有資料，且無法復原。請輸入密碼確認。",
     delete_account_password_placeholder: "輸入密碼確認",
@@ -1313,6 +1323,9 @@ const I18N = {
     plan_trial_note: "7 天免费试用，到期前可随时取消。",
     plan_active_sub: "你目前是 Pro 会员，已解锁跨设备同步和智能推荐。",
     plan_manage_btn: "管理订阅", plan_error_generic: "发生错误，请稍后再试。",
+    plan_redeem_toggle: "有兑换码？", plan_redeem_placeholder: "输入兑换码",
+    plan_redeem_confirm_btn: "兑换", plan_redeem_success: "兑换成功！付费功能已解锁",
+    plan_redeem_invalid: "兑换码无效或已达使用上限",
     settings_language: "🌐 语言",
     delete_account_warning: "注销账号会永久删除你的所有资料，且无法恢复。请输入密码确认。",
     delete_account_password_placeholder: "输入密码确认",
@@ -1436,6 +1449,9 @@ const I18N = {
     plan_trial_note: "7-day free trial. Cancel anytime before it ends.",
     plan_active_sub: "You're a Pro member — cross-device sync and smart suggestions are unlocked.",
     plan_manage_btn: "Manage subscription", plan_error_generic: "Something went wrong. Please try again.",
+    plan_redeem_toggle: "Have a redemption code?", plan_redeem_placeholder: "Enter code",
+    plan_redeem_confirm_btn: "Redeem", plan_redeem_success: "Redeemed! Pro features unlocked",
+    plan_redeem_invalid: "Invalid code or usage limit reached",
     settings_language: "🌐 Language",
     delete_account_warning: "Deleting your account permanently erases all your data and can't be undone. Enter your password to confirm.",
     delete_account_password_placeholder: "Enter your password to confirm",
@@ -1559,6 +1575,9 @@ const I18N = {
     plan_trial_note: "7일 무료 체험. 종료 전 언제든 취소할 수 있어요.",
     plan_active_sub: "현재 Pro 회원이에요. 기기 간 동기화와 스마트 추천이 해제되어 있어요.",
     plan_manage_btn: "구독 관리", plan_error_generic: "오류가 발생했어요. 잠시 후 다시 시도해 주세요.",
+    plan_redeem_toggle: "교환 코드가 있나요?", plan_redeem_placeholder: "코드 입력",
+    plan_redeem_confirm_btn: "교환하기", plan_redeem_success: "교환 완료! Pro 기능이 해제되었어요",
+    plan_redeem_invalid: "코드가 유효하지 않거나 사용 한도에 도달했어요",
     settings_language: "🌐 언어",
     delete_account_warning: "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없어요. 비밀번호를 입력해 확인해 주세요.",
     delete_account_password_placeholder: "확인할 비밀번호를 입력하세요",
@@ -1682,6 +1701,9 @@ const I18N = {
     plan_trial_note: "7 días de prueba gratis. Cancela cuando quieras antes de que termine.",
     plan_active_sub: "Eres miembro Pro: la sincronización entre dispositivos y las sugerencias inteligentes están desbloqueadas.",
     plan_manage_btn: "Gestionar suscripción", plan_error_generic: "Algo salió mal. Inténtalo de nuevo.",
+    plan_redeem_toggle: "¿Tienes un código de canje?", plan_redeem_placeholder: "Ingresa el código",
+    plan_redeem_confirm_btn: "Canjear", plan_redeem_success: "¡Canjeado! Las funciones Pro están desbloqueadas",
+    plan_redeem_invalid: "Código inválido o límite de uso alcanzado",
     settings_language: "🌐 Idioma",
     delete_account_warning: "Eliminar tu cuenta borrará todos tus datos de forma permanente y no se puede deshacer. Ingresa tu contraseña para confirmar.",
     delete_account_password_placeholder: "Ingresa tu contraseña para confirmar",
@@ -1896,7 +1918,9 @@ function applyStaticI18n() {
     planCloseBtn: null,
     planMonthlyBtn: "plan_monthly_btn",
     planAnnualBtn: "plan_annual_btn",
-    planManageBtn: "plan_manage_btn"
+    planManageBtn: "plan_manage_btn",
+    planRedeemToggle: "plan_redeem_toggle",
+    planRedeemConfirmBtn: "plan_redeem_confirm_btn"
   };
   Object.keys(map).forEach(id => {
     const key = map[id];
@@ -1922,7 +1946,8 @@ function applyStaticI18n() {
     routineInput: "routine_add_placeholder",
     ctxNewCatInput: "ctx_new_category_placeholder",
     actionInput: "shutdown_next_placeholder",
-    stuckInput: "shutdown_stuck_placeholder"
+    stuckInput: "shutdown_stuck_placeholder",
+    planRedeemInput: "plan_redeem_placeholder"
   };
   Object.keys(placeholders).forEach(id => {
     const key = placeholders[id];
@@ -2062,21 +2087,26 @@ function refreshPlanOverlayView() {
 }
 function setPlanLoading(loading) {
   document.getElementById("planLoadingMsg").style.display = loading ? "" : "none";
-  ["planMonthlyBtn", "planAnnualBtn", "planManageBtn"].forEach(id => {
+  ["planMonthlyBtn", "planAnnualBtn", "planManageBtn", "planRedeemConfirmBtn"].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = loading;
   });
 }
-function showPlanError() {
+function showPlanError(key) {
   const el = document.getElementById("planErrorMsg");
-  el.textContent = t("plan_error_generic");
+  el.textContent = t(key || "plan_error_generic");
   el.style.display = "";
   setPlanLoading(false);
+}
+function resetPlanRedeemForm() {
+  document.getElementById("planRedeemForm").style.display = "none";
+  document.getElementById("planRedeemInput").value = "";
 }
 document.getElementById("openPlanBtn").addEventListener("click", () => {
   document.getElementById("settingsOverlay").classList.remove("open");
   document.getElementById("planErrorMsg").style.display = "none";
   refreshPlanOverlayView();
+  resetPlanRedeemForm();
   document.getElementById("planOverlay").classList.add("open");
 });
 document.getElementById("planCloseBtn").addEventListener("click", () => {
@@ -2109,7 +2139,44 @@ document.addEventListener("click", (e) => {
   if (e.target.closest && e.target.closest("#recoUpgradeBtn")) {
     document.getElementById("planErrorMsg").style.display = "none";
     refreshPlanOverlayView();
+    resetPlanRedeemForm();
     document.getElementById("planOverlay").classList.add("open");
+  }
+});
+document.getElementById("planRedeemInput").addEventListener("keydown", (e) => {
+  // Same IME-composition guard as captureInput — see its comment further down.
+  if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) {
+    e.preventDefault();
+    document.getElementById("planRedeemConfirmBtn").click();
+  }
+});
+document.getElementById("planRedeemToggle").addEventListener("click", () => {
+  const form = document.getElementById("planRedeemForm");
+  const showing = form.style.display !== "none";
+  form.style.display = showing ? "none" : "flex";
+  if (!showing) document.getElementById("planRedeemInput").focus();
+});
+document.getElementById("planRedeemConfirmBtn").addEventListener("click", async () => {
+  const code = document.getElementById("planRedeemInput").value.trim();
+  document.getElementById("planErrorMsg").style.display = "none";
+  if (!code) return;
+  setPlanLoading(true);
+  try {
+    await window.__redeemCode(code);
+    setPlanLoading(false);
+    // The Cloud Function has already written the unlocked status by the time
+    // it returns success, so it's safe to flip the view immediately instead
+    // of waiting on the Firestore listener's own round-trip.
+    refreshPlanOverlayView();
+    resetPlanRedeemForm();
+    const el = document.getElementById("planErrorMsg");
+    el.style.color = "#3E7A4F";
+    el.textContent = t("plan_redeem_success");
+    el.style.display = "";
+  } catch (e) {
+    console.error(e);
+    document.getElementById("planErrorMsg").style.color = "";
+    showPlanError("plan_redeem_invalid");
   }
 });
 
@@ -3969,6 +4036,15 @@ if (typeof window.cowork !== "undefined") {
     const res = await fn({});
     if (res.data && res.data.url) location.href = res.data.url;
     else throw new Error("no portal url returned");
+  };
+  // Friends & family access with no Stripe involved — see the redeemCode
+  // comment in functions/index.js for how codes are issued/revoked. Throws
+  // (caught by the classic script's click handler) on any invalid/expired/
+  // used-up code; the Cloud Function itself decides what's valid, this is
+  // just the thin client-side call.
+  window.__redeemCode = async function (code) {
+    const fn = httpsCallable(functionsClient, "redeemCode");
+    await fn({ code });
   };
 
   // Identifies writes made by *this* browser tab this session, so its own
