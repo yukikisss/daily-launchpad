@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>今日啟動台</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -753,7 +754,7 @@
   }
   #profileLogoutBtn { color: #C6613F; font-weight: 600; }
 
-  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay, #planOverlay { z-index: 46; }
+  #syncOverlay, #switchOverlay, #profileOverlay, #settingsOverlay, #planOverlay, #categoryManageOverlay { z-index: 46; }
   /* Reachable from both the pre-login auth screen (z-index 50) and the
      post-login settings menu, so it needs to outrank everything else. */
   #langOverlay { z-index: 55; }
@@ -962,6 +963,8 @@
       <div class="settings-divider" id="openPlanDivider"></div>
       <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
       <div class="settings-divider"></div>
+      <button type="button" class="context-menu-item" id="openCategoryManageBtn">🏷️ 管理分類</button>
+      <div class="settings-divider"></div>
       <button type="button" class="context-menu-item" id="openLanguageBtn">🌐 繁中 / 简中 / English / 한국어 / Español</button>
       <div class="settings-divider"></div>
       <button type="button" class="context-menu-item" id="deleteAccountBtn" style="color:#C6613F;">🗑️ 註銷帳號</button>
@@ -978,6 +981,15 @@
         <button class="btn-primary" id="deleteAccountConfirmBtn" type="button">確認註銷</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="categoryManageOverlay">
+  <div class="modal" style="max-width:360px; position:relative;">
+    <button type="button" id="categoryManageCloseBtn" class="modal-close-x" title="關閉">×</button>
+    <h3 id="categoryManageTitleH3">🏷️ 管理分類</h3>
+    <div class="sub" id="categoryManageSub">點鉛筆圖示可以修改分類名稱，所有用到這個分類的項目都會一起更新。</div>
+    <div id="categoryManageList" style="margin-top:14px; display:flex; flex-direction:column; gap:2px; max-height:280px; overflow-y:auto;"></div>
   </div>
 </div>
 
@@ -1200,6 +1212,11 @@ const I18N = {
     plan_redeem_toggle: "有兌換碼？", plan_redeem_placeholder: "輸入兌換碼",
     plan_redeem_confirm_btn: "兌換", plan_redeem_success: "兌換成功！付費功能已解鎖",
     plan_redeem_invalid: "兌換碼無效或已達使用上限",
+    category_manage_menu_item: "🏷️ 管理分類", category_manage_title: "🏷️ 管理分類",
+    category_manage_sub: "點鉛筆圖示可以修改分類名稱，所有用到這個分類的項目都會一起更新。",
+    category_manage_empty: "目前還沒有分類可以管理",
+    category_rename_title: "重新命名", category_rename_duplicate: "已經有這個名稱的分類了",
+    category_rename_reserved: "不能改成這個保留名稱",
     settings_language: "🌐 語言",
     delete_account_warning: "註銷帳號會永久刪除妳的所有資料，且無法復原。請輸入密碼確認。",
     delete_account_password_placeholder: "輸入密碼確認",
@@ -1327,6 +1344,11 @@ const I18N = {
     plan_redeem_toggle: "有兑换码？", plan_redeem_placeholder: "输入兑换码",
     plan_redeem_confirm_btn: "兑换", plan_redeem_success: "兑换成功！付费功能已解锁",
     plan_redeem_invalid: "兑换码无效或已达使用上限",
+    category_manage_menu_item: "🏷️ 管理分类", category_manage_title: "🏷️ 管理分类",
+    category_manage_sub: "点铅笔图标可以修改分类名称，所有用到这个分类的项目都会一起更新。",
+    category_manage_empty: "目前还没有分类可以管理",
+    category_rename_title: "重新命名", category_rename_duplicate: "已经有这个名称的分类了",
+    category_rename_reserved: "不能改成这个保留名称",
     settings_language: "🌐 语言",
     delete_account_warning: "注销账号会永久删除你的所有资料，且无法恢复。请输入密码确认。",
     delete_account_password_placeholder: "输入密码确认",
@@ -1454,6 +1476,11 @@ const I18N = {
     plan_redeem_toggle: "Have a redemption code?", plan_redeem_placeholder: "Enter code",
     plan_redeem_confirm_btn: "Redeem", plan_redeem_success: "Redeemed! Pro features unlocked",
     plan_redeem_invalid: "Invalid code or usage limit reached",
+    category_manage_menu_item: "🏷️ Manage Categories", category_manage_title: "🏷️ Manage Categories",
+    category_manage_sub: "Tap the pencil to rename a category — every item using it updates too.",
+    category_manage_empty: "No categories to manage yet",
+    category_rename_title: "Rename", category_rename_duplicate: "A category with this name already exists",
+    category_rename_reserved: "Can't rename to this reserved name",
     settings_language: "🌐 Language",
     delete_account_warning: "Deleting your account permanently erases all your data and can't be undone. Enter your password to confirm.",
     delete_account_password_placeholder: "Enter your password to confirm",
@@ -1581,6 +1608,11 @@ const I18N = {
     plan_redeem_toggle: "교환 코드가 있나요?", plan_redeem_placeholder: "코드 입력",
     plan_redeem_confirm_btn: "교환하기", plan_redeem_success: "교환 완료! Pro 기능이 해제되었어요",
     plan_redeem_invalid: "코드가 유효하지 않거나 사용 한도에 도달했어요",
+    category_manage_menu_item: "🏷️ 분류 관리", category_manage_title: "🏷️ 분류 관리",
+    category_manage_sub: "연필 아이콘을 누르면 분류 이름을 바꿀 수 있어요. 이 분류를 쓰는 모든 항목도 함께 바뀌어요.",
+    category_manage_empty: "아직 관리할 분류가 없어요",
+    category_rename_title: "이름 바꾸기", category_rename_duplicate: "이미 같은 이름의 분류가 있어요",
+    category_rename_reserved: "이 예약된 이름으로는 바꿀 수 없어요",
     settings_language: "🌐 언어",
     delete_account_warning: "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없어요. 비밀번호를 입력해 확인해 주세요.",
     delete_account_password_placeholder: "확인할 비밀번호를 입력하세요",
@@ -1708,6 +1740,11 @@ const I18N = {
     plan_redeem_toggle: "¿Tienes un código de canje?", plan_redeem_placeholder: "Ingresa el código",
     plan_redeem_confirm_btn: "Canjear", plan_redeem_success: "¡Canjeado! Las funciones Pro están desbloqueadas",
     plan_redeem_invalid: "Código inválido o límite de uso alcanzado",
+    category_manage_menu_item: "🏷️ Gestionar categorías", category_manage_title: "🏷️ Gestionar categorías",
+    category_manage_sub: "Toca el lápiz para renombrar una categoría — todos los elementos que la usan también se actualizan.",
+    category_manage_empty: "Aún no hay categorías para gestionar",
+    category_rename_title: "Renombrar", category_rename_duplicate: "Ya existe una categoría con este nombre",
+    category_rename_reserved: "No se puede usar este nombre reservado",
     settings_language: "🌐 Idioma",
     delete_account_warning: "Eliminar tu cuenta borrará todos tus datos de forma permanente y no se puede deshacer. Ingresa tu contraseña para confirmar.",
     delete_account_password_placeholder: "Ingresa tu contraseña para confirmar",
@@ -1925,7 +1962,9 @@ function applyStaticI18n() {
     planAnnualBtn: "plan_annual_btn",
     planManageBtn: "plan_manage_btn",
     planRedeemToggle: "plan_redeem_toggle",
-    planRedeemConfirmBtn: "plan_redeem_confirm_btn"
+    planRedeemConfirmBtn: "plan_redeem_confirm_btn",
+    openCategoryManageBtn: "category_manage_menu_item",
+    categoryManageCloseBtn: null
   };
   Object.keys(map).forEach(id => {
     const key = map[id];
@@ -1970,7 +2009,8 @@ function applyStaticI18n() {
     newAttachBtn: "capture_attach_title",
     reminderDismissBtn: "verify_dismiss_title",
     routineFab: "routine_fab_title",
-    planCloseBtn: "btn_close"
+    planCloseBtn: "btn_close",
+    categoryManageCloseBtn: "btn_close"
   };
   Object.keys(titles).forEach(id => {
     const el = document.getElementById(id);
@@ -2015,7 +2055,9 @@ function applyStaticI18n() {
     planTitleH3: "plan_title",
     planFreeSub: "plan_free_sub",
     planTrialNote: "plan_trial_note",
-    planActiveSub: "plan_active_sub"
+    planActiveSub: "plan_active_sub",
+    categoryManageTitleH3: "category_manage_title",
+    categoryManageSub: "category_manage_sub"
   };
   Object.keys(staticText).forEach(id => {
     const el = document.getElementById(id);
@@ -2496,6 +2538,119 @@ window.initApp = function () {
     });
   }
 
+  // Renaming a category updates it everywhere it's used: the categories
+  // list itself, every capture item tagged with it (across all dates, not
+  // just today), and any learned keyword weights under the old name — so
+  // nothing gets silently orphaned back into 未分類 by a rename.
+  function renameCategory(oldName, newName) {
+    const trimmed = (newName || "").trim();
+    if (!trimmed || trimmed === oldName) return { ok: true };
+    if (trimmed === DEFAULT_CATEGORY) return { ok: false, reason: "reserved" };
+    if (categories.includes(trimmed)) return { ok: false, reason: "duplicate" };
+
+    const idx = categories.indexOf(oldName);
+    if (idx !== -1) categories[idx] = trimmed;
+    saveCategories(categories);
+
+    Object.keys(captures).forEach(dateKey => {
+      (captures[dateKey] || []).forEach(it => {
+        if (it.category === oldName) it.category = trimmed;
+      });
+    });
+    saveCaptures(captures);
+
+    if (catKeywords[oldName]) {
+      catKeywords[trimmed] = Object.assign({}, catKeywords[trimmed] || {}, catKeywords[oldName]);
+      delete catKeywords[oldName];
+      saveCatKeywords(catKeywords);
+    }
+
+    return { ok: true };
+  }
+
+  let categoryEditTarget = null; // which category's row is currently showing the rename input
+  function renderCategoryManageList() {
+    const listEl = document.getElementById("categoryManageList");
+    const editable = categories.filter(c => c !== DEFAULT_CATEGORY);
+    if (!editable.length) {
+      listEl.innerHTML = `<div style="font-size:13px; color:#ABA998; padding:8px 4px;">${t("category_manage_empty")}</div>`;
+      return;
+    }
+    listEl.innerHTML = editable.map(c => {
+      if (c === categoryEditTarget) {
+        return `
+          <div class="category-manage-row" data-cat="${escapeHtml(c)}" style="display:flex; gap:6px; align-items:center; padding:4px 2px;">
+            <input type="text" class="category-rename-input" value="${escapeHtml(c)}" style="flex:1; min-width:0; padding:6px 7px; border:1px solid #C6613F; border-radius:6px; font-size:13px; font-family:inherit; outline:none;" />
+            <button type="button" class="category-rename-confirm" title="${t("btn_confirm_add")}" style="background:#C6613F; color:#fff; border:none; border-radius:6px; padding:6px 8px; cursor:pointer; font-size:12px;">✓</button>
+            <button type="button" class="category-rename-cancel" title="${t("btn_cancel")}" style="background:none; border:none; color:#ABA998; cursor:pointer; font-size:14px; padding:6px;">×</button>
+          </div>
+        `;
+      }
+      return `
+        <div class="category-manage-row" data-cat="${escapeHtml(c)}" style="display:flex; gap:6px; align-items:center; justify-content:space-between; padding:8px 6px; border-radius:6px;">
+          <span>${escapeHtml(c)}</span>
+          <button type="button" class="category-rename-btn" title="${t("category_rename_title")}" style="background:none; border:none; cursor:pointer; font-size:14px; padding:4px;">✏️</button>
+        </div>
+      `;
+    }).join("") + `<div id="categoryManageError" class="auth-error" style="display:none; margin-top:8px;"></div>`;
+  }
+  document.getElementById("categoryManageList").addEventListener("click", (e) => {
+    const row = e.target.closest(".category-manage-row");
+    if (!row) return;
+    const cat = row.getAttribute("data-cat");
+    if (e.target.closest(".category-rename-btn")) {
+      categoryEditTarget = cat;
+      renderCategoryManageList();
+      const input = document.querySelector(".category-rename-input");
+      if (input) { input.focus(); input.select(); }
+      return;
+    }
+    if (e.target.closest(".category-rename-cancel")) {
+      categoryEditTarget = null;
+      renderCategoryManageList();
+      return;
+    }
+    if (e.target.closest(".category-rename-confirm")) {
+      const input = row.querySelector(".category-rename-input");
+      const result = renameCategory(cat, input.value);
+      if (!result.ok) {
+        const err = document.getElementById("categoryManageError");
+        err.textContent = t(result.reason === "duplicate" ? "category_rename_duplicate" : "category_rename_reserved");
+        err.style.display = "";
+        return;
+      }
+      categoryEditTarget = null;
+      renderCategoryManageList();
+      renderItems();
+      renderHero();
+    }
+  });
+  document.getElementById("categoryManageList").addEventListener("keydown", (e) => {
+    if (!e.target.classList.contains("category-rename-input")) return;
+    // Same IME-composition guard as captureInput — see its comment further down.
+    if (e.key === "Enter" && !e.isComposing && e.keyCode !== 229) {
+      e.preventDefault();
+      const row = e.target.closest(".category-manage-row");
+      if (row) row.querySelector(".category-rename-confirm").click();
+    }
+    if (e.key === "Escape") {
+      categoryEditTarget = null;
+      renderCategoryManageList();
+    }
+  });
+  document.getElementById("openCategoryManageBtn").addEventListener("click", () => {
+    document.getElementById("settingsOverlay").classList.remove("open");
+    categoryEditTarget = null;
+    renderCategoryManageList();
+    document.getElementById("categoryManageOverlay").classList.add("open");
+  });
+  document.getElementById("categoryManageCloseBtn").addEventListener("click", () => {
+    document.getElementById("categoryManageOverlay").classList.remove("open");
+  });
+  document.getElementById("categoryManageOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "categoryManageOverlay") document.getElementById("categoryManageOverlay").classList.remove("open");
+  });
+
   document.getElementById("ctxNewCatToggle").addEventListener("click", (e) => {
     e.stopPropagation();
     document.getElementById("ctxNewCatRow").style.display = "flex";
@@ -2566,14 +2721,17 @@ window.initApp = function () {
       "开会", "会议", "报告", "简报", "专案", "客户", "老板", "面试", "履历", "合同", "邮件",
       "meeting", "report", "presentation", "project", "client", "boss", "colleague", "work", "interview", "resume", "email", "deadline", "proposal", "contract", "overtime",
       "회의", "보고서", "발표", "프로젝트", "고객", "상사", "동료", "출근", "면접", "이력서", "이메일", "마감", "계약",
-      "reunión", "informe", "proyecto", "cliente", "jefe", "trabajo", "entrevista", "currículum", "correo", "propuesta", "contrato"
+      "reunión", "informe", "proyecto", "cliente", "jefe", "trabajo", "entrevista", "currículum", "correo", "propuesta", "contrato",
+      // Coding/dev work — common enough as its own thing that it's worth
+      // covering directly rather than relying on generic "work" words.
+      "code", "coding", "debug", "bug", "commit", "deploy", "程式", "寫程式", "程式碼", "写代码", "代码", "除錯", "部署"
     ],
     study: [
-      "論文", "作業", "考試", "研究", "唸書", "上課", "課堂", "教授", "期末", "期中", "文獻", "投稿",
-      "论文", "作业", "考试", "念书", "上课", "课堂", "文献",
-      "dissertation", "thesis", "chapter", "homework", "exam", "study", "lecture", "professor", "research", "paper", "assignment", "class", "reading", "citation", "draft",
-      "논문", "숙제", "시험", "연구", "공부", "수업", "교수", "과제", "리포트",
-      "tesis", "capítulo", "examen", "estudiar", "clase", "profesor", "investigación", "tarea", "ensayo"
+      "論文", "作業", "考試", "研究", "唸書", "學習", "上課", "課堂", "教授", "期末", "期中", "文獻", "投稿",
+      "论文", "作业", "考试", "念书", "学习", "上课", "课堂", "文献",
+      "dissertation", "thesis", "chapter", "homework", "exam", "study", "learn", "learning", "lecture", "professor", "research", "paper", "assignment", "class", "reading", "citation", "draft",
+      "논문", "숙제", "시험", "연구", "공부", "학습", "수업", "교수", "과제", "리포트",
+      "tesis", "capítulo", "examen", "estudiar", "aprender", "clase", "profesor", "investigación", "tarea", "ensayo"
     ],
     health: [
       "運動", "健身", "跑步", "瑜珈", "看醫生", "吃藥", "睡覺", "喝水", "散步", "重訓", "游泳", "拉伸", "體檢", "看牙醫",
