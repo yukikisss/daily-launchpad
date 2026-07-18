@@ -959,7 +959,7 @@
     <div class="sub" id="settingsSub">資料備份與跨裝置相關的功能都在這裡。</div>
     <div id="settingsMainView" style="margin-top:14px;">
       <button type="button" class="context-menu-item" id="openPlanBtn">💎 會員方案</button>
-      <div class="settings-divider"></div>
+      <div class="settings-divider" id="openPlanDivider"></div>
       <button type="button" class="context-menu-item" id="syncHistoryBtn">🔄 同步歷史</button>
       <div class="settings-divider"></div>
       <button type="button" class="context-menu-item" id="openLanguageBtn">🌐 繁中 / 简中 / English / 한국어 / Español</button>
@@ -2047,6 +2047,10 @@ document.getElementById("langOptionList").addEventListener("click", (e) => {
 // live in the module script (window.__startUpgrade / window.__openManageSubscription)
 // since those need the Firebase Functions SDK.
 function isSubscriptionUnlocked() {
+  // Inside a Cowork artifact preview there's no real login/billing at all
+  // (see the "window.cowork" bypass further down) — treat it as fully
+  // unlocked rather than showing a paywall nothing here can actually clear.
+  if (typeof window.cowork !== "undefined") return true;
   const sub = (window.__getSubscription && window.__getSubscription()) || { status: "none" };
   return sub.status === "active" || sub.status === "trialing";
 }
@@ -2350,7 +2354,17 @@ window.initApp = function () {
     ctxTarget = null;
   }
   document.addEventListener("click", hideContextMenu);
-  document.addEventListener("scroll", hideContextMenu, true);
+  // Capture-phase "scroll" fires for scrolling anywhere in the document,
+  // including the category list's own internal scroll (.context-menu-cats)
+  // — without the containment check below, the menu closed itself the
+  // instant you tried to scroll it, making the list feel stuck/unscrollable
+  // and hiding any category further down than the first screenful (e.g. one
+  // added a while ago, past the ones shown at the top).
+  document.addEventListener("scroll", (e) => {
+    const menu = document.getElementById("contextMenu");
+    if (menu && menu.contains(e.target)) return;
+    hideContextMenu();
+  }, true);
   document.getElementById("ctxAttachBtn").addEventListener("click", (e) => {
     e.stopPropagation();
     if (ctxTarget) openAttachPicker(ctxTarget.id, ctxTarget.dateKey);
@@ -2947,8 +2961,16 @@ window.initApp = function () {
       `;
     } else {
       const last = history[history.length - 1];
-      // Once you've actually started, the nudge has done its job — it
-      // disappears instead of lingering as a stale prompt.
+      // Once you've actually started, both the "what you were stuck on" and
+      // the "do this now" nudge have done their job — yesterday's stuck
+      // point is stale news once today's action is already underway, so
+      // both disappear together instead of the stuck line lingering on its own.
+      const stuckHtml = last.started ? "" : `
+        <div class="hero-row">
+          <div class="hero-tag">${t("hero_last_stuck_tag")}</div>
+          <div class="hero-text">${escapeHtml(last.stuck || t("empty_placeholder"))}</div>
+        </div>
+      `;
       const actionHtml = last.started ? "" : `
         <div class="hero-row">
           <div class="hero-tag">${t("hero_doing_tag")}</div>
@@ -2958,10 +2980,7 @@ window.initApp = function () {
       `;
       resumeHtml = `
         <div class="hero-label">${t("hero_start_label")}</div>
-        <div class="hero-row">
-          <div class="hero-tag">${t("hero_last_stuck_tag")}</div>
-          <div class="hero-text">${escapeHtml(last.stuck || t("empty_placeholder"))}</div>
-        </div>
+        ${stuckHtml}
         ${actionHtml}
         <div class="hero-meta">${t("hero_recorded_at", { date: escapeHtml(last.date) })}</div>
       `;
@@ -3086,8 +3105,24 @@ window.initApp = function () {
     const startBtn = e.target.closest(".hero-start-btn");
     if (startBtn) {
       if (history.length) {
-        history[history.length - 1].started = true;
-        saveHistory(history);
+        const last = history[history.length - 1];
+        if (!last.started) {
+          last.started = true;
+          saveHistory(history);
+          // Yesterday's planned "next action" becoming today's first move is
+          // exactly the hard part for her — actually starting. Once it's
+          // launched, count it straight into today's completed list instead
+          // of making her separately re-log something she just did.
+          const text = (last.nextAction || "").trim();
+          if (text) {
+            const category = guessCategory(tokenize(text)) || DEFAULT_CATEGORY;
+            ensureCategory(category);
+            if (!captures[tk]) captures[tk] = [];
+            captures[tk].push({ id: uid(), text, done: true, ts: Date.now(), category });
+            saveCaptures(captures);
+            renderItems();
+          }
+        }
         renderHero();
       }
       return;
@@ -3871,6 +3906,11 @@ if (typeof window.cowork !== "undefined") {
   document.querySelector(".wrap").style.display = "";
   document.getElementById("shutdownBtn").style.display = "";
   document.getElementById("routineFab").style.display = "";
+  // No real billing here (see isSubscriptionUnlocked() above, which already
+  // treats this preview as fully unlocked) — hide the menu entry too instead
+  // of leaving a "會員方案" button that can't actually do anything.
+  document.getElementById("openPlanBtn").style.display = "none";
+  document.getElementById("openPlanDivider").style.display = "none";
   window.initApp();
 }
 </script>
